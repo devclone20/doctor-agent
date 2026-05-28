@@ -1,0 +1,58 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+*.so
+*.dylib
+
+# Virtual environments
+venv/
+.venv/
+env/
+.env/
+ENV/
+
+# IDEs
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Project data files (user-specific)
+projectos/
+*.projecto.json
+projecto.json
+*_rascunho.docx
+*_final.docx
+*.docx
+
+# Secrets
+.env
+.env.*
+*.key
+*.pem
+secrets.json
+
+# Test artifacts
+.pytest_cache/
+.coverage
+htmlcov/
+*.log
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb
+
+# Compiled docs
+_build/
+site/
