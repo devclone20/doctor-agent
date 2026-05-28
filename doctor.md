@@ -1409,20 +1409,163 @@ Dia 4:
 
 ---
 
+### Organização de pastas — REGRA OBRIGATÓRIA
+
+**Cada projecto vive numa pasta própria, numerada e nomeada, dentro de `~/Desktop/projectos/`.**
+
+#### Estrutura obrigatória:
+```
+~/Desktop/projectos/
+  1_bitcoin_hash_calc/
+    projecto.json
+    build.py
+    bitcoin_hash_calc.docx        ← único ficheiro .docx, editado in-place
+  2_sistemas_digitais_lab3/
+    projecto.json
+    build.py
+    sistemas_digitais_lab3.docx
+  3_dissertacao_msc/
+    projecto.json
+    build.py
+    dissertacao_msc.docx
+```
+
+#### Regras de nomenclatura:
+- O número é sequencial: o Doctor conta as pastas existentes em `~/Desktop/projectos/` e atribui o próximo número
+- O nome da pasta: `{número}_{titulo_em_snake_case}` — sem espaços, sem acentos, minúsculas
+- O ficheiro `.docx` tem o mesmo nome base que a pasta (sem o número prefixado)
+- `projecto.json` e `build.py` ficam sempre dentro da pasta do projecto — nunca na raiz
+
+#### Código para criar a pasta do projecto:
+```python
+import re
+from pathlib import Path
+
+def criar_pasta_projecto(titulo):
+    """
+    Cria a pasta numerada para o projecto.
+    Retorna o caminho completo da pasta e o número atribuído.
+    """
+    base = Path("~/Desktop/projectos").expanduser()
+    base.mkdir(parents=True, exist_ok=True)
+
+    # Contar pastas existentes para número sequencial
+    pastas_existentes = [p for p in base.iterdir() if p.is_dir()]
+    numero = len(pastas_existentes) + 1
+
+    # Normalizar nome: minúsculas, sem acentos, espaços → underscore
+    nome_normalizado = titulo.lower().strip()
+    nome_normalizado = re.sub(r'[àáâãä]', 'a', nome_normalizado)
+    nome_normalizado = re.sub(r'[èéêë]', 'e', nome_normalizado)
+    nome_normalizado = re.sub(r'[ìíîï]', 'i', nome_normalizado)
+    nome_normalizado = re.sub(r'[òóôõö]', 'o', nome_normalizado)
+    nome_normalizado = re.sub(r'[ùúûü]', 'u', nome_normalizado)
+    nome_normalizado = re.sub(r'[ç]', 'c', nome_normalizado)
+    nome_normalizado = re.sub(r'[^a-z0-9]+', '_', nome_normalizado)
+    nome_normalizado = nome_normalizado.strip('_')
+
+    nome_pasta = f"{numero}_{nome_normalizado}"
+    caminho_pasta = base / nome_pasta
+    caminho_pasta.mkdir(exist_ok=True)
+
+    nome_docx = nome_normalizado + ".docx"
+    caminho_docx = caminho_pasta / nome_docx
+
+    return caminho_pasta, caminho_docx, numero, nome_pasta
+```
+
+---
+
+### Edição in-place do documento — REGRA CRÍTICA
+
+**O Doctor edita SEMPRE o mesmo ficheiro `.docx` dentro da pasta do projecto.**
+Nunca cria um novo documento com nome diferente quando o projecto já existe.
+
+#### Regra de ouro:
+```
+✅ CORRECTO: abrir projecto.json → ler caminho_output → regenerar/editar ESSE ficheiro
+❌ ERRADO: criar bitcoin_hash_calc_v2.docx, bitcoin_hash_calc_new.docx, etc.
+```
+
+#### Como actualizar o documento existente:
+```python
+def actualizar_documento(caminho_projecto):
+    """
+    Regenera o .docx existente a partir do estado actual do projecto.
+    Sobrescreve o ficheiro original — sem criar versões novas.
+    """
+    caminho = Path(caminho_projecto).expanduser()
+    p = json.loads(caminho.read_text())
+
+    # O caminho do .docx está sempre registado no projecto.json
+    caminho_docx = Path(p["caminho_output"]).expanduser()
+
+    # Gerar novo documento (substitui o anterior)
+    doc = Document()
+    # ... construir conteúdo completo com todos os dados do projecto ...
+    doc.save(str(caminho_docx))
+
+    # Actualizar metadados
+    p["atualizado"] = datetime.now().isoformat()
+    p["versao"] = p.get("versao", 1) + 1
+    caminho.write_text(json.dumps(p, ensure_ascii=False, indent=2))
+
+    print(f"✅ Documento actualizado (v{p['versao']}): {caminho_docx}")
+    return str(caminho_docx)
+```
+
+#### Versioning no projecto.json:
+O `projecto.json` mantém um campo `versao` (inteiro) que incrementa a cada edição.
+O utilizador sabe sempre em que versão está ao fazer "estado do projecto".
+
+```json
+{
+  "versao": 3,
+  "atualizado": "2026-05-28T15:30:00",
+  "caminho_output": "~/Desktop/projectos/1_bitcoin_hash_calc/bitcoin_hash_calc.docx"
+}
+```
+
+---
+
 ### Gestão de múltiplos projectos
 
-O Doctor gere múltiplos projectos em paralelo. Cada um tem o seu `projecto.json`:
+O Doctor gere múltiplos projectos em paralelo. Cada pasta é independente:
 
 ```
-~/Desktop/
-  projectos/
-    sd_lab3/projecto.json
-    fisica_relatorio/projecto.json
-    dissertacao_msc/projecto.json
+~/Desktop/projectos/
+  1_bitcoin_hash_calc/          ← projecto activo
+  2_sistemas_digitais_lab3/
+  3_dissertacao_msc/
+```
+
+Para listar todos os projectos activos, o Doctor executa:
+```python
+def listar_projectos():
+    base = Path("~/Desktop/projectos").expanduser()
+    if not base.exists():
+        print("Nenhum projecto criado ainda.")
+        return
+    pastas = sorted([p for p in base.iterdir() if p.is_dir()])
+    print(f"\n{'='*55}")
+    print("PROJECTOS DOCTOR")
+    print('='*55)
+    for pasta in pastas:
+        json_path = pasta / "projecto.json"
+        if json_path.exists():
+            dados = json.loads(json_path.read_text())
+            status = dados.get("status", "?")
+            versao = dados.get("versao", 1)
+            atualizado = dados.get("atualizado", "")[:10]
+            titulo = dados.get("titulo", pasta.name)
+            icon = {"em_progresso": "🟡", "finalizado": "✅", "rascunho": "📝"}.get(status, "⬜")
+            print(f"  {icon} {pasta.name:<40} v{versao}  {atualizado}")
+            print(f"     └─ {titulo}")
+    print('='*55)
 ```
 
 Quando existem múltiplos projectos, o Doctor pergunta qual activar ou permite
-especificar: "carregar projecto sd_lab3".
+especificar: "carregar projecto 1" ou "carregar projecto bitcoin".
 
 ---
 
@@ -1444,3 +1587,5 @@ especificar: "carregar projecto sd_lab3".
 14. **Resultados com unidades** — todos os valores numéricos têm unidades e algarismos significativos correctos
 15. **Legenda em toda a figura/tabela** — sem excepção; figura abaixo, tabela acima
 16. **Estado do projecto persiste** — o `projecto.json` é a fonte de verdade; nunca perder dados entre sessões
+17. **Um projecto = uma pasta numerada** — `~/Desktop/projectos/N_nome/` — nunca documentos soltos na Secretária
+18. **Edição in-place obrigatória** — nunca criar `_v2`, `_new`, `_updated`; editar sempre o mesmo `.docx` registado em `caminho_output`
