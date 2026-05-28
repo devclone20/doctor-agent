@@ -246,9 +246,24 @@ TOOL_DEFINITIONS = [
 
 # Comandos perigosos bloqueados
 BLOCKED_COMMANDS = {
-    "rm -rf", "sudo rm", "drop table", "drop database",
-    "format c:", "mkfs", "dd if=", "> /dev/", "chmod 777",
-    "curl | sh", "wget | sh", ":(){:|:&};:", "fork bomb",
+    # Destruicao de dados
+    "rm -rf", "rm  -rf", "sudo rm", "rmdir /s", "del /f",
+    # SQL destructivo
+    "drop table", "drop database", "truncate table",
+    # Formatacao e particionamento
+    "format c:", "mkfs", "fdisk", "diskpart",
+    # Overwrite de disco
+    "dd if=", "> /dev/",
+    # Escalada de privilegios
+    "chmod 777", "chmod -r 777", "sudo su", "sudo -i",
+    # Exfiltracao de credenciais
+    "cat ~/.aws", "cat ~/.ssh", "cat ~/.gnupg",
+    # Fork bomb
+    ":(){:|:&};:", "fork bomb",
+    # Download e execucao
+    "curl | sh", "curl | bash", "wget | sh", "wget | bash",
+    # Python exec de entrada nao confiavel
+    "eval(", "exec(",
 }
 
 
@@ -510,11 +525,12 @@ def _search_web(inp: dict) -> str:
 
 def _run_command(inp: dict) -> str:
     import subprocess
+    import re as _re
     command = inp.get("command", "")
     working_dir = inp.get("working_dir", os.path.expanduser("~/doctor-work"))
 
-    # Verificar comandos bloqueados
-    command_lower = command.lower()
+    # Verificar comandos bloqueados — normalizar espacos para prevenir bypass
+    command_lower = _re.sub(r'\s+', ' ', command.lower().strip())
     for blocked in BLOCKED_COMMANDS:
         if blocked in command_lower:
             return f"Comando bloqueado por segurança: '{blocked}'"
