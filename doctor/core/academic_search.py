@@ -137,23 +137,27 @@ def build_bibtex(paper: dict) -> str:
     return bibtex.strip()
 
 
-# ─── IST Scholar ─────────────────────────────────────────────────────────────
+# ─── IST Scholar (via OpenAlex — University of Lisbon) ───────────────────────
+
+# Universidade de Lisboa em OpenAlex: I141596103
+_ULISBOA_OPENALEX_ID = "I141596103"
+
 
 def search_ist_scholar(query: str, limit: int = 10) -> list[dict]:
-    """Pesquisa no repositório Scholar do IST."""
+    """
+    Pesquisa artigos de IST/ULisboa via OpenAlex institution filter.
+    Filtra pela Universidade de Lisboa (que inclui o IST).
+    """
     params = {
-        "q": query,
-        "domain": "records",
-        "sort": "_score:desc",
-        "page": 1,
-        "perPage": limit,
+        "search": query,
+        "per-page": min(limit, 25),
+        "sort": "relevance_score:desc",
+        "filter": f"institutions.id:{_ULISBOA_OPENALEX_ID}",
+        "mailto": "doctor-agent@ist.pt",
     }
     try:
         with httpx.Client(timeout=15.0) as client:
-            resp = client.get(
-                "https://scholar.tecnico.ulisboa.pt/api/",
-                params=params,
-            )
+            resp = client.get("https://api.openalex.org/works", params=params)
             if resp.status_code != 200:
                 return []
             data = resp.json()
@@ -162,24 +166,28 @@ def search_ist_scholar(query: str, limit: int = 10) -> list[dict]:
 
     results = []
     for item in data.get("results", [])[:limit]:
-        metadata = item.get("metadata", {})
-        authors_list = metadata.get("creators", []) or metadata.get("contributors", [])
+        authorships = item.get("authorships", [])
         authors = ", ".join(
-            a.get("name", "") for a in authors_list if a.get("name")
+            a.get("author", {}).get("display_name", "")
+            for a in authorships[:8]
         )
-        title = metadata.get("title", item.get("title", "Untitled"))
-        year_raw = metadata.get("publicationDate", metadata.get("date", ""))
-        year = int(str(year_raw)[:4]) if str(year_raw)[:4].isdigit() else None
-        url = f"https://scholar.tecnico.ulisboa.pt/records/{item.get('id', '')}"
-        abstract = metadata.get("description", "")[:500]
+        doi = (item.get("doi") or "").replace("https://doi.org/", "")
+        pub_year = item.get("publication_year")
+        venue_info = (item.get("primary_location") or {})
+        source_info = (venue_info.get("source") or {})
+        venue = source_info.get("display_name", "IST Lisboa")
+        url = (venue_info.get("pdf_url") or
+               f"https://doi.org/{doi}" if doi else item.get("id", ""))
+        abstract = _reconstruct_abstract(item.get("abstract_inverted_index") or {})
 
         paper = {
-            "id": f"ist_{item.get('id', hashlib.md5(title.encode()).hexdigest()[:8])}",
-            "title": title,
+            "id": f"ist_{(item.get('id') or '').split('/')[-1]}",
+            "title": item.get("title", ""),
             "authors": authors,
-            "year": year,
-            "venue": "IST Scholar Repository",
-            "abstract": abstract,
+            "year": pub_year,
+            "venue": venue or "IST Lisboa",
+            "doi": doi,
+            "abstract": abstract[:500],
             "url": url,
             "source": "IST Scholar",
         }
