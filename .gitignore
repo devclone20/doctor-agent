@@ -1,58 +1,36 @@
+# Ambiente virtual
+.venv/
+venv/
+env/
+
 # Python
 __pycache__/
-*.py[cod]
+*.pyc
 *.pyo
 *.pyd
 .Python
-*.egg
 *.egg-info/
 dist/
 build/
-.eggs/
-*.so
-*.dylib
 
-# Virtual environments
-venv/
-.venv/
-env/
-.env/
-ENV/
-
-# IDEs
-.idea/
-.vscode/
-*.swp
-*.swo
-*~
-.DS_Store
-Thumbs.db
-
-# Project data files (user-specific)
-projectos/
-*.projecto.json
-projecto.json
-*_rascunho.docx
-*_final.docx
-*.docx
-
-# Secrets
+# Segredos — NUNCA commitar
 .env
-.env.*
-*.key
-*.pem
-secrets.json
+*.env.*
 
-# Test artifacts
-.pytest_cache/
-.coverage
-htmlcov/
+# Base de dados
+*.db
+*.db-wal
+*.db-shm
+
+# Ficheiros temporários
+*.tmp
 *.log
+.DS_Store
 
-# Jupyter
-.ipynb_checkpoints/
-*.ipynb
+# Editor
+.vscode/
+.idea/
+*.swp
 
-# Compiled docs
-_build/
-site/
+# PDFs temporários de pesquisa (manter só os indexados)
+knowledge_base/papers/tmp/
