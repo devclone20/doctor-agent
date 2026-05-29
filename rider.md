@@ -956,3 +956,308 @@ class BudgetEnforcer:
 - LangGraph state machine: https://github.com/langchain-ai/langgraph
 - LangGraph concepts (states/transitions): https://langchain-ai.github.io/langgraph/concepts/
 - Token budget patterns: https://github.com/anthropics/anthropic-cookbook
+
+---
+
+## MÓDULO SPEC-DRIVEN — Declaração de tarefa antes de despachar (RID-4)
+
+Antes de despachar qualquer sub-agente, o Rider processa um `spec.json` declarativo
+que define completamente a tarefa. Nenhum agente é despachado sem spec validada.
+
+```python
+import json
+from pathlib import Path
+from datetime import datetime
+
+# Schema de spec obrigatório
+SPEC_SCHEMA = {
+    "required": ["id", "titulo", "objectivo", "agente_alvo",
+                 "inputs", "outputs_esperados", "criterios_sucesso"],
+    "tipos_validos": ["pesquisa", "escrita", "revisao",
+                      "segurança", "orquestracao", "analise"]
+}
+
+def criar_spec(titulo: str, objectivo: str, agente_alvo: str,
+               inputs: list, outputs_esperados: list,
+               criterios_sucesso: list, tipo: str = "escrita") -> dict:
+    """
+    Cria uma spec declarativa para uma tarefa de sub-agente.
+    Deve ser criada e validada ANTES de despachar o agente.
+    """
+    spec = {
+        "id":                 f"spec_{datetime.now().strftime('%Y%m%d_%H%M%S')}",
+        "titulo":             titulo,
+        "tipo":               tipo,
+        "objectivo":          objectivo,
+        "agente_alvo":        agente_alvo,
+        "inputs":             inputs,
+        "outputs_esperados":  outputs_esperados,
+        "criterios_sucesso":  criterios_sucesso,
+        "criado_em":          datetime.now().isoformat(),
+        "estado":             "pendente",
+        "quality_gate":       False,   # True após validação
+    }
+    return spec
+
+def validar_spec(spec: dict) -> tuple[bool, list[str]]:
+    """
+    Quality gate: valida a spec antes de despachar o agente.
+    Retorna (válida: bool, erros: list).
+    """
+    erros = []
+    for campo in SPEC_SCHEMA["required"]:
+        if campo not in spec or not spec[campo]:
+            erros.append(f"Campo obrigatório em falta: {campo}")
+
+    if spec.get("tipo") not in SPEC_SCHEMA["tipos_validos"]:
+        erros.append(f"Tipo inválido: {spec.get('tipo')}")
+
+    if not spec.get("criterios_sucesso"):
+        erros.append("Critérios de sucesso não definidos — o agente não sabe quando parar")
+
+    valida = len(erros) == 0
+    if valida:
+        spec["quality_gate"] = True
+        spec["estado"] = "aprovada"
+    return valida, erros
+
+def despachar_agente(spec: dict, prompt_base: str) -> str:
+    """
+    Só despacha o agente se a spec estiver validada (quality_gate=True).
+    """
+    valida, erros = validar_spec(spec)
+    if not valida:
+        raise ValueError(f"Spec inválida — não é possível despachar:\n" +
+                         "\n".join(f"  • {e}" for e in erros))
+
+    # Construir prompt enriquecido com a spec
+    prompt = f"""
+SPEC ID: {spec['id']}
+OBJECTIVO: {spec['objectivo']}
+INPUTS: {json.dumps(spec['inputs'], ensure_ascii=False)}
+OUTPUTS ESPERADOS: {json.dumps(spec['outputs_esperados'], ensure_ascii=False)}
+CRITÉRIOS DE SUCESSO: {json.dumps(spec['criterios_sucesso'], ensure_ascii=False)}
+
+{prompt_base}
+"""
+    return prompt
+```
+
+### Regra do Rider:
+**Nunca despachar um sub-agente sem spec validada.** Se a tarefa não tem spec,
+criar uma antes de continuar. A spec é o contrato entre o Rider e o sub-agente.
+
+---
+
+## MÓDULO REPRODUTIBILIDADE — Manifest de orquestração (RID-5)
+
+Cada orquestração gera um **manifest de reprodutibilidade** — equivalente à secção
+"Materiais e Métodos" de um paper académico. Regista tudo o que foi usado para que
+os resultados possam ser reproduzidos exactamente.
+
+```python
+from dataclasses import dataclass, field, asdict
+from datetime import datetime
+import json, hashlib
+
+@dataclass
+class ManifestOrquestracao:
+    """
+    Registo completo de uma orquestração para reprodutibilidade.
+    Gerado automaticamente pelo Rider no início de cada missão.
+    """
+    # Identidade
+    missao_id:        str = ""
+    missao_titulo:    str = ""
+    iniciada_em:      str = field(default_factory=lambda: datetime.now().isoformat())
+    concluida_em:     str = ""
+
+    # Modelo e configuração
+    modelo:           str = "claude-sonnet-4-6"
+    temperatura:      float = 1.0
+    max_tokens:       int = 8096
+
+    # Sub-agentes despachados
+    agentes:          list = field(default_factory=list)
+    # formato: [{"nome": str, "spec_id": str, "modelo": str,
+    #             "tokens_input": int, "tokens_output": int,
+    #             "iniciado": str, "concluido": str, "estado": str}]
+
+    # Inputs e outputs
+    inputs_hash:      dict = field(default_factory=dict)
+    # formato: {"ficheiro.txt": "sha256:abc123..."}
+    outputs:          list = field(default_factory=list)
+
+    # Prompts usados (hash para não expor conteúdo sensível)
+    prompts_hash:     list = field(default_factory=list)
+
+    # Ambiente
+    tools_usadas:     list = field(default_factory=list)
+    versao_rider:     str  = "2.0"
+
+    def registar_agente(self, nome: str, spec_id: str, modelo: str):
+        self.agentes.append({
+            "nome": nome, "spec_id": spec_id, "modelo": modelo,
+            "iniciado": datetime.now().isoformat(),
+            "tokens_input": 0, "tokens_output": 0, "estado": "em_progresso"
+        })
+
+    def registar_input(self, nome: str, conteudo: str):
+        h = hashlib.sha256(conteudo.encode()).hexdigest()[:16]
+        self.inputs_hash[nome] = f"sha256:{h}"
+
+    def registar_prompt(self, prompt: str):
+        h = hashlib.sha256(prompt.encode()).hexdigest()[:16]
+        self.prompts_hash.append(f"sha256:{h}")
+
+    def finalizar(self):
+        self.concluida_em = datetime.now().isoformat()
+
+    def exportar(self, caminho: str = None) -> dict:
+        dados = asdict(self)
+        if caminho:
+            Path(caminho).write_text(
+                json.dumps(dados, ensure_ascii=False, indent=2))
+        return dados
+```
+
+### Uso pelo Rider
+
+```python
+# No início de cada missão
+manifest = ManifestOrquestracao(
+    missao_id="rider_20260529_001",
+    missao_titulo="Gerar relatório de laboratório SD3"
+)
+manifest.registar_input("enunciado.pdf", conteudo_enunciado)
+
+# Ao despachar cada sub-agente
+manifest.registar_agente("doctor", spec.id, "claude-sonnet-4-6")
+manifest.registar_prompt(prompt_doctor)
+
+# No final
+manifest.finalizar()
+manifest.exportar("projectos/sd_lab3/manifest.json")
+```
+
+---
+
+## MÓDULO PROMPT INJECTION GUARD — Sanitização de inputs externos (RID-6)
+
+O Rider sanitiza **todo o input externo** antes de o passar para qualquer sub-agente.
+Ficheiros, APIs, web scraping, dados de utilizador — tudo passa pelo guard.
+
+```python
+import re
+from typing import Any
+
+# Padrões de injecção conhecidos
+INJECTION_PATTERNS = [
+    # Prompt injection clássico
+    r"ignore (all |previous |above )?(instructions?|prompts?|rules?)",
+    r"forget (everything|all|your instructions)",
+    r"you are now",
+    r"new (persona|role|identity|instructions)",
+    r"system:\s",
+    r"\[INST\]|\[/INST\]",           # Llama instruction tags
+    r"<\|im_start\|>|<\|im_end\|>",  # ChatML tokens
+    r"###\s*(Human|Assistant|System):",
+
+    # Exfiltração de dados
+    r"(send|email|post|upload|exfiltrate).{0,50}(to|at)\s+https?://",
+    r"curl\s+https?://",
+    r"wget\s+https?://",
+
+    # Execução de código
+    r"(exec|eval|os\.system|subprocess)\s*\(",
+    r"__import__",
+    r"`[^`]+`",                        # backtick command execution
+
+    # Override de instruções
+    r"(override|bypass|disable|skip)\s+(safety|security|filter|rule)",
+]
+
+COMPILED_PATTERNS = [re.compile(p, re.IGNORECASE) for p in INJECTION_PATTERNS]
+
+def sanitizar_input(texto: str, fonte: str = "externo") -> tuple[str, list[str]]:
+    """
+    Sanitiza input externo antes de passar a um sub-agente.
+    Retorna (texto_sanitizado, lista_de_ameaças_detectadas).
+
+    fonte: "ficheiro" | "api" | "web" | "utilizador" | "externo"
+    """
+    ameacas = []
+    texto_limpo = texto
+
+    for pattern in COMPILED_PATTERNS:
+        matches = pattern.findall(texto)
+        if matches:
+            ameacas.append(f"Padrão detectado: {pattern.pattern[:50]}...")
+            # Substituir por placeholder inofensivo
+            texto_limpo = pattern.sub("[CONTEÚDO REMOVIDO]", texto_limpo)
+
+    # Limitar comprimento para evitar context overflow attacks
+    MAX_INPUT = 50_000
+    if len(texto_limpo) > MAX_INPUT:
+        texto_limpo = texto_limpo[:MAX_INPUT] + "\n[TRUNCADO — comprimento máximo atingido]"
+        ameacas.append(f"Input truncado: {len(texto)} → {MAX_INPUT} chars")
+
+    if ameacas:
+        import logging
+        logging.warning("[RIDER GUARD] Input de '%s' sanitizado: %d ameaças — %s",
+                        fonte, len(ameacas), ameacas)
+
+    return texto_limpo, ameacas
+
+
+def sanitizar_dict(dados: dict, fonte: str = "api") -> tuple[dict, list]:
+    """Sanitiza recursivamente todos os valores string de um dict (ex: resposta de API)."""
+    ameacas_total = []
+    dados_limpos  = {}
+
+    for chave, valor in dados.items():
+        if isinstance(valor, str):
+            limpo, ameacas = sanitizar_input(valor, fonte)
+            dados_limpos[chave] = limpo
+            ameacas_total.extend(ameacas)
+        elif isinstance(valor, dict):
+            limpo, ameacas = sanitizar_dict(valor, fonte)
+            dados_limpos[chave] = limpo
+            ameacas_total.extend(ameacas)
+        elif isinstance(valor, list):
+            dados_limpos[chave] = [
+                sanitizar_input(v, fonte)[0] if isinstance(v, str) else v
+                for v in valor
+            ]
+        else:
+            dados_limpos[chave] = valor
+
+    return dados_limpos, ameacas_total
+
+
+def input_seguro(func):
+    """
+    Decorator para sanitizar automaticamente inputs de funções do Rider
+    que recebem dados externos.
+    """
+    def wrapper(*args, **kwargs):
+        args_limpos = tuple(
+            sanitizar_input(a, "decorator")[0] if isinstance(a, str) else a
+            for a in args
+        )
+        kwargs_limpos = {
+            k: sanitizar_input(v, "decorator")[0] if isinstance(v, str) else v
+            for k, v in kwargs.items()
+        }
+        return func(*args_limpos, **kwargs_limpos)
+    return wrapper
+```
+
+### Regra do Rider — inputs externos:
+```
+Ficheiro lido do disco      → sanitizar_input(conteudo, "ficheiro")
+Resposta de API             → sanitizar_dict(json_response, "api")
+Texto recolhido da web      → sanitizar_input(html_text, "web")
+Input do utilizador         → sanitizar_input(user_text, "utilizador")
+```
+**Nunca** passar input externo directamente para um prompt sem sanitização.

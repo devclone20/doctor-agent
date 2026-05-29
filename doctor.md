@@ -1853,6 +1853,251 @@ def add_ist_logo(doc, vertical=False, width_cm=4.0):
 
 ---
 
+## MÓDULO DOCLING — Ingestão estrutural de documentos (DOC-4)
+
+Antes de editar qualquer `.docx` ou PDF existente com conteúdo real do utilizador,
+usar **Docling** para extrair a estrutura semântica completa. Operar sobre o JSON
+semântico em vez do XML interno do python-docx. Mais robusto, menos destrutivo.
+
+```python
+# Instalar: pip install docling
+from docling.document_converter import DocumentConverter
+
+def ingerir_documento(caminho: str) -> dict:
+    """
+    Extrai estrutura semântica de PDF ou .docx existente.
+    Retorna dict com: títulos, parágrafos, tabelas, figuras, referências.
+    Usar ANTES de qualquer edição — nunca operar às cegas no XML.
+    """
+    converter = DocumentConverter()
+    result    = converter.convert(caminho)
+    doc_json  = result.document.export_to_dict()
+
+    estrutura = {
+        "titulo":      doc_json.get("name", ""),
+        "seccoes":     [],
+        "tabelas":     [],
+        "figuras":     [],
+        "referencias": [],
+    }
+
+    for item in doc_json.get("body", {}).get("children", []):
+        tipo = item.get("$type", "")
+        if "Heading" in tipo:
+            estrutura["seccoes"].append({
+                "nivel": item.get("level", 1),
+                "texto": item.get("text", ""),
+            })
+        elif "Table" in tipo:
+            estrutura["tabelas"].append(item)
+        elif "Figure" in tipo:
+            estrutura["figuras"].append(item)
+
+    return estrutura
+
+
+def editar_com_docling(caminho: str, instrucoes: dict) -> str:
+    """
+    Fluxo completo: ingerir → analisar → editar com track changes.
+    instrucoes: {'seccao': str, 'operacao': 'inserir'|'substituir'|'apagar', 'conteudo': str}
+    """
+    estrutura = ingerir_documento(caminho)
+    # ... aplicar instrucoes sobre estrutura semântica ...
+    # Usar add_tracked_insertion() / add_tracked_deletion() do MÓDULO TRACK CHANGES
+    return estrutura
+```
+
+**Regra:** PDF ou .docx com conteúdo existente → sempre `ingerir_documento()` primeiro.
+Documento novo/vazio → python-docx directo é suficiente.
+
+---
+
+## MÓDULO NOVATHESIS — Template LaTeX IST Lisboa (DOC-5)
+
+**NOVAthesis** (924 ⭐, activamente mantido) é o template LaTeX oficial para dissertações
+de universidades portuguesas, incluindo IST Lisboa. Suporta `school=ist/ul` nativamente.
+
+### Configuração para IST Lisboa
+
+```latex
+% ─── NOVAthesis para IST Lisboa ──────────────────────────────────────────────
+\documentclass[
+  doctype=msc,          % msc = Mestrado | phd = Doutoramento | bsc = Licenciatura
+  school=ist/ul,        % IST — Instituto Superior Técnico, Universidade de Lisboa
+  lang=pt,              % pt = Português | en = Inglês
+  linkscolor=black,     % preto — sem cores em hiperligações (norma utilizador)
+  printcommittee=true,  % inclui júri na capa
+  spine=true,           % gera lombada
+]{novathesis}
+
+% Metadados
+\title[pt={Título em Português},
+       en={Title in English}]{}
+
+\author[name={Nome Completo},
+        affiliation={Instituto Superior Técnico}]{}
+
+\adviser[name={Prof. Nome Orientador},
+         affiliation={Departamento, IST},
+         school={ist/ul}]{}
+
+\committee[c,name={Prof. Presidente},role={Presidente}]
+\committee[m,name={Prof. Orientador},role={Orientador}]
+\committee[m,name={Prof. Vogal},role={Vogal}]
+
+\date{month=Junho, year=2026}
+
+% Bibliografia IEEE
+\addbibresource{references.bib}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}[pt]
+Resumo em português (máx. 250 palavras, 4-6 palavras-chave).
+\end{abstract}
+
+\begin{abstract}[en]
+Abstract in English (max. 250 words, 4-6 keywords).
+\end{abstract}
+
+\tableofcontents
+\listoffigures  \clearpage
+\listoftables   \clearpage
+
+\include{chapters/01_introducao}
+\include{chapters/02_background}
+\include{chapters/03_metodologia}
+\include{chapters/04_implementacao}
+\include{chapters/05_avaliacao}
+\include{chapters/06_conclusao}
+
+\printbibliography[heading=bibintoc]
+
+\appendix
+\include{appendix/apendice_a}
+
+\end{document}
+```
+
+### Instalação e compilação
+
+```bash
+# Clonar NOVAthesis
+git clone https://github.com/joaomlourenco/novathesis.git dissertacao/
+cd dissertacao/
+
+# Compilar com LuaLaTeX (recomendado para IST)
+lualatex -interaction=nonstopmode main.tex
+biber main
+lualatex -interaction=nonstopmode main.tex
+lualatex -interaction=nonstopmode main.tex
+```
+
+**Fonte:** https://github.com/joaomlourenco/novathesis
+
+---
+
+## MÓDULO QUARTO — Publicação académica multi-formato (DOC-6)
+
+**Quarto** é um sistema de publicação científica que gera PDF, Word (.docx) e HTML
+a partir de ficheiros `.qmd` (Markdown + código executável). Alternativa ao LaTeX puro
+quando se quer multi-formato sem duplicação de conteúdo.
+
+### Estrutura de projecto Quarto IST
+
+```
+dissertacao_quarto/
+├── _quarto.yml          ← configuração global
+├── index.qmd            ← capa / introdução
+├── chapters/
+│   ├── 01_intro.qmd
+│   ├── 02_background.qmd
+│   ├── 03_methodology.qmd
+│   ├── 04_results.qmd
+│   └── 05_conclusion.qmd
+├── references.bib
+└── assets/
+    └── ist_logo_preto.png
+```
+
+### Ficheiro `_quarto.yml` para dissertação IST
+
+```yaml
+project:
+  type: book
+  output-dir: _output
+
+book:
+  title: "Título da Dissertação"
+  author: "Nome Completo"
+  date: "Junho 2026"
+  chapters:
+    - index.qmd
+    - chapters/01_intro.qmd
+    - chapters/02_background.qmd
+    - chapters/03_methodology.qmd
+    - chapters/04_results.qmd
+    - chapters/05_conclusion.qmd
+
+bibliography: references.bib
+csl: ieee.csl           # citações IEEE
+
+# ── Output PDF (via LaTeX) ──────────────────────────────────────────────────
+format:
+  pdf:
+    documentclass: report
+    papersize: a4
+    fontsize: 10pt
+    mainfont: Arial
+    linestretch: 1.5
+    margin-left: 2.5cm
+    margin-right: 2.5cm
+    margin-top: 2.5cm
+    margin-bottom: 2.5cm
+    colorlinks: false       # preto — sem cores em hiperligações
+    toc: true
+    toc-depth: 3
+    number-sections: true
+    include-in-header:
+      text: |
+        \usepackage[justification=justified,singlelinecheck=false]{caption}
+
+  # ── Output Word (.docx) ──────────────────────────────────────────────────
+  docx:
+    reference-doc: assets/ist_template_timbrado.docx   # template IST oficial
+    toc: true
+    number-sections: true
+
+  # ── Output HTML ──────────────────────────────────────────────────────────
+  html:
+    theme: default
+    toc: true
+    number-sections: true
+```
+
+### Compilar todos os formatos de uma vez
+
+```bash
+# Instalar Quarto: https://quarto.org/docs/get-started/
+quarto render              # gera PDF + DOCX + HTML simultaneamente
+quarto render --to pdf     # só PDF
+quarto render --to docx    # só Word
+quarto preview             # servidor local com live reload
+```
+
+### Quando usar Quarto vs LaTeX puro vs python-docx
+
+| Situação | Ferramenta |
+|----------|-----------|
+| Dissertação IST clássica | NOVAthesis (LaTeX) |
+| Relatório técnico multi-formato | Quarto |
+| Geração programática de `.docx` | python-docx |
+| PDF com código executável (R/Python) | Quarto |
+| Submissão Fénix IST | NOVAthesis → PDF |
+
+---
+
 ## MÓDULO CITATION ENGINE — Citações automáticas via CrossRef/DOI
 
 Quando o utilizador fornece um DOI, um título de paper, ou pede citações IEEE/APA,
@@ -2182,3 +2427,6 @@ def add_tracked_deletion(paragraph, old_text: str, author: str = "Doctor AI"):
 19. **Citações verificadas** — usar sempre o Citation Engine (DOI → CrossRef) para gerar referências IEEE; nunca fabricar metadados de citação
 20. **Track changes em edições** — quando editar um `.docx` existente com conteúdo já escrito pelo utilizador, usar revision marks em vez de substituição silenciosa
 21. **LaTeX como output alternativo** — quando solicitado, gerar sempre o template LaTeX IST v5.0 além do `.docx`
+22. **Docling para ingestão** — antes de editar PDF ou .docx existente, usar Docling para extrair estrutura semântica
+23. **NOVAthesis nativo** — dissertações IST usam `school=ist/ul` no template NOVAthesis
+24. **Quarto suportado** — projectos `.qmd` são formato académico válido com exportação PDF + DOCX + HTML

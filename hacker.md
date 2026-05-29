@@ -812,3 +812,202 @@ semgrep scan \
 - Semgrep rules p/python: https://semgrep.dev/p/python
 - Gitleaks: https://github.com/gitleaks/gitleaks
 - detect-secrets: https://github.com/Yelp/detect-secrets
+
+---
+
+## MÓDULO OWASP 2025 — Top 10 actualizado (HACK-4)
+
+O OWASP Top 10 foi actualizado em 2025 com duas novas categorias críticas.
+O Hacker conhece e audita contra a lista completa actualizada.
+
+### OWASP Top 10 2025 — Lista completa
+
+| # | Categoria | Novidade |
+|---|-----------|----------|
+| A01 | Broken Access Control | — |
+| A02 | Cryptographic Failures | — |
+| A03 | **Software and Data Integrity Failures / Supply Chain** | 🆕 Expandido 2025 |
+| A04 | Insecure Design | — |
+| A05 | Security Misconfiguration | — |
+| A06 | Vulnerable and Outdated Components | — |
+| A07 | Identification and Authentication Failures | — |
+| A08 | Software and Data Integrity Failures | — |
+| A09 | Security Logging and Monitoring Failures | — |
+| A10 | **Improper Exception and Error Handling** | 🆕 Nova 2025 |
+
+### A03 — Supply Chain (novo foco 2025)
+
+```python
+# Verificações obrigatórias Supply Chain:
+
+# 1. Verificar integridade de dependências
+pip-audit --requirement requirements.txt --output json
+
+# 2. Verificar hashes de pacotes (pip-compile com hashes)
+pip-compile --generate-hashes requirements.in
+
+# 3. Scan de dependências transitivas
+safety check --full-report
+
+# 4. Verificar se pacotes vêm de fontes confiáveis
+# Evitar: pip install pacote-com-typosquatting
+# Usar: verificar nome exacto em pypi.org antes de instalar
+```
+
+### A10 — Exception Handling (nova categoria 2025)
+
+```python
+# Padrões a detectar e corrigir:
+
+# ❌ VULNERÁVEL — expõe stack trace ao utilizador
+@app.errorhandler(Exception)
+def handle_error(e):
+    return str(e), 500          # expõe detalhes internos
+
+# ✅ SEGURO — mensagem genérica + log interno
+import logging
+@app.errorhandler(Exception)
+def handle_error(e):
+    logging.exception("Internal error: %s", e)   # log seguro
+    return {"error": "Internal server error"}, 500  # genérico ao exterior
+
+# ❌ VULNERÁVEL — except vazio silencia erros de segurança
+try:
+    validate_token(token)
+except:
+    pass
+
+# ✅ SEGURO — capturar explicitamente, nunca silenciar
+try:
+    validate_token(token)
+except InvalidTokenError as e:
+    logging.warning("Token validation failed: %s", e)
+    raise AuthenticationError("Invalid credentials")
+```
+
+### Checklist de auditoria OWASP 2025
+
+```bash
+# Auditoria completa OWASP 2025 — executar nesta ordem:
+echo "A01 — Access Control"
+grep -r "TODO.*auth\|FIXME.*permission\|bypass" . --include="*.py"
+
+echo "A03 — Supply Chain"
+pip-audit -r requirements.txt
+cat requirements.txt | grep -v "==" | head -20  # dependências sem versão fixada
+
+echo "A06 — Outdated Components"
+pip list --outdated
+
+echo "A10 — Exception Handling"
+grep -r "except:\|except Exception:" . --include="*.py" | grep -v "# noqa"
+grep -r "traceback.print\|str(e).*return\|repr(e).*return" . --include="*.py"
+```
+
+---
+
+## MÓDULO SARIF — Relatórios de segurança estruturados (HACK-5)
+
+**SARIF** (Static Analysis Results Interchange Format) é o formato padrão para
+integração de resultados de segurança com GitHub Security tab, IDEs e ferramentas SIEM.
+O Hacker gera sempre relatórios SARIF quando possível.
+
+### Gerar SARIF com Semgrep
+
+```bash
+# Output SARIF — integra directamente com GitHub Security tab
+semgrep scan \
+  --config p/python \
+  --config p/secrets \
+  --config p/owasp-top-ten \
+  --sarif \
+  --output semgrep-results.sarif \
+  .
+
+# Upload para GitHub Security (em GitHub Actions)
+- name: Upload SARIF
+  uses: github/codeql-action/upload-sarif@v3
+  with:
+    sarif_file: semgrep-results.sarif
+```
+
+### Gerar SARIF com Gitleaks
+
+```bash
+gitleaks detect \
+  --source . \
+  --report-format sarif \
+  --report-path gitleaks-results.sarif \
+  --redact
+```
+
+### GitHub Actions — upload automático de SARIF
+
+```yaml
+# .github/workflows/security-sarif.yml
+name: 🛡️ Security SARIF Upload
+
+on: [push, pull_request]
+
+jobs:
+  security:
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write   # necessário para upload SARIF
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Semgrep SARIF
+        uses: semgrep/semgrep-action@v1
+        with:
+          config: >-
+            p/python
+            p/secrets
+            p/owasp-top-ten
+          generateSarif: "1"
+
+      - name: Upload SARIF to GitHub Security
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: semgrep.sarif
+```
+
+**Resultado:** os findings aparecem directamente na tab **Security → Code scanning**
+do repositório GitHub, com localização exacta (ficheiro, linha, severidade).
+
+---
+
+## MÓDULO KINGFISHER — Scanner de secrets em Rust (HACK-6)
+
+**Kingfisher** é uma alternativa ao Gitleaks escrita em Rust — 2-5x mais rápida para
+repositórios grandes (>50k commits). Recomendado quando Gitleaks é demasiado lento.
+
+```bash
+# Instalar
+cargo install kingfisher
+# ou: brew install kingfisher (macOS)
+
+# Scan do repositório completo
+kingfisher scan --path . --output kingfisher-report.json
+
+# Scan do histórico git completo
+kingfisher scan --path . --git-history --output kingfisher-history.json
+
+# Output SARIF
+kingfisher scan --path . --format sarif --output kingfisher.sarif
+```
+
+### Quando usar Gitleaks vs Kingfisher
+
+| Situação | Ferramenta |
+|----------|-----------|
+| Repo pequeno/médio (<50k commits) | Gitleaks (mais maduro, mais regras) |
+| Repo grande (>50k commits) | Kingfisher (2-5x mais rápido) |
+| CI/CD com tempo limite apertado | Kingfisher |
+| Pre-commit hook | Gitleaks (integração nativa) |
+| Output SARIF para GitHub | Ambos suportam |
+
+**Fonte:** https://github.com/praetorian-inc/kingfisher
