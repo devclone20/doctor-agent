@@ -1569,6 +1569,311 @@ especificar: "carregar projecto 1" ou "carregar projecto bitcoin".
 
 ---
 
+## MÓDULO CITATION ENGINE — Citações automáticas via CrossRef/DOI
+
+Quando o utilizador fornece um DOI, um título de paper, ou pede citações IEEE/APA,
+o Doctor usa a **CrossRef API** para obter metadados verificados — nunca fabrica autores,
+anos ou títulos.
+
+### Fluxo de geração de citação a partir de DOI
+
+```python
+import urllib.request, json, re
+
+def get_citation_from_doi(doi: str, style: str = "IEEE") -> str:
+    """
+    Busca metadados verificados na CrossRef API e formata em IEEE ou APA.
+    doi: ex. "10.1109/TNET.2014.2366999"
+    style: "IEEE" | "APA"
+    """
+    url = f"https://api.crossref.org/works/{doi}"
+    req = urllib.request.Request(url, headers={"User-Agent": "DoctorAgent/1.0 (mailto:aigenesisvip20@gmail.com)"})
+    try:
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            data = json.loads(resp.read())["message"]
+    except Exception as e:
+        return f"[ERRO: DOI {doi} não encontrado na CrossRef — verificar manualmente. {e}]"
+
+    # Extrair campos
+    authors = data.get("author", [])
+    author_str = _format_authors(authors, style)
+    title = data.get("title", ["[Título não disponível]"])[0]
+    year = str(data.get("published", {}).get("date-parts", [[None]])[0][0] or "s.d.")
+    container = data.get("container-title", [""])[0]
+    volume = data.get("volume", "")
+    issue = data.get("issue", "")
+    pages = data.get("page", "")
+    doi_url = f"https://doi.org/{doi}"
+
+    if style == "IEEE":
+        vol_iss = f", vol. {volume}" if volume else ""
+        vol_iss += f", no. {issue}" if issue else ""
+        pg = f", pp. {pages}" if pages else ""
+        return f'{author_str}, "{title}," {container}{vol_iss}{pg}, {year}. doi: {doi}'
+
+    elif style == "APA":
+        pg = f", {pages}" if pages else ""
+        vol_iss = f", {volume}" if volume else ""
+        if issue: vol_iss += f"({issue})"
+        return f'{author_str} ({year}). {title}. {container}{vol_iss}{pg}. https://doi.org/{doi}'
+
+    return f"[Estilo {style} não suportado]"
+
+
+def _format_authors(authors: list, style: str) -> str:
+    """Formata lista de autores no estilo correcto."""
+    if not authors:
+        return "[Autores não disponíveis]"
+
+    formatted = []
+    for a in authors:
+        family = a.get("family", "")
+        given = a.get("given", "")
+        initials = ". ".join([n[0] for n in given.split() if n]) + "." if given else ""
+        if style == "IEEE":
+            formatted.append(f"{initials} {family}".strip())
+        elif style == "APA":
+            formatted.append(f"{family}, {initials}".strip(", "))
+
+    if len(formatted) == 1:
+        return formatted[0]
+    elif style == "IEEE":
+        return ", ".join(formatted[:-1]) + f", and {formatted[-1]}"
+    else:
+        return ", ".join(formatted[:-1]) + f", & {formatted[-1]}"
+
+
+def build_bibliography_from_dois(dois: list[str], style: str = "IEEE") -> list[str]:
+    """
+    Dado uma lista de DOIs, devolve uma lista de referências formatadas e numeradas.
+    Uso: refs = build_bibliography_from_dois(["10.xxx/yyy", "10.zzz/www"])
+    """
+    refs = []
+    for i, doi in enumerate(dois, 1):
+        citation = get_citation_from_doi(doi, style)
+        refs.append(f"[{i}] {citation}" if style == "IEEE" else citation)
+    return refs
+```
+
+### Busca por título (quando não há DOI)
+
+```python
+def search_crossref_by_title(title: str, max_results: int = 3) -> list[dict]:
+    """
+    Pesquisa CrossRef por título e devolve os top resultados com DOI.
+    Útil quando o utilizador fornece só o título do paper.
+    """
+    query = urllib.parse.quote(title)
+    url = f"https://api.crossref.org/works?query.title={query}&rows={max_results}"
+    req = urllib.request.Request(url, headers={"User-Agent": "DoctorAgent/1.0 (mailto:aigenesisvip20@gmail.com)"})
+    try:
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            items = json.loads(resp.read())["message"]["items"]
+        return [{"doi": it.get("DOI",""), "title": it.get("title",[""])[0],
+                 "year": it.get("published",{}).get("date-parts",[[None]])[0][0]} for it in items]
+    except Exception as e:
+        return [{"error": str(e)}]
+```
+
+### Comportamento obrigatório
+
+- Quando o utilizador pede uma citação e fornece DOI → chamar `get_citation_from_doi()`
+- Quando fornece título → chamar `search_crossref_by_title()` e confirmar o resultado antes de citar
+- **Nunca** escrever uma citação IEEE sem verificação — marcar como `[NÃO VERIFICADO]` se a API falhar
+- Fallback para arXiv se DOI não existir na CrossRef: `https://export.arxiv.org/abs/{arxiv_id}`
+
+---
+
+## MÓDULO LATEX — Template IST Lisboa
+
+Quando o utilizador pede output LaTeX **ou** quando o documento é uma dissertação IST,
+gerar **sempre** o template LaTeX compatível com o padrão IST v5.0 (LuaLaTeX).
+
+### Template base IST — dissertação de Mestrado
+
+```latex
+% ─── Preâmbulo IST Lisboa v5.0 ───────────────────────────────────────────────
+\documentclass[12pt, a4paper, twoside]{report}
+
+% Codificação e língua
+\usepackage{fontspec}           % LuaLaTeX
+\usepackage[portuguese]{babel}
+\usepackage{csquotes}
+
+% Tipografia IST
+\setmainfont{Times New Roman}
+\setsansfont{Arial}
+\setmonofont{Courier New}
+
+% Geometria A4 IST
+\usepackage[
+  a4paper,
+  left=3cm, right=2.5cm,
+  top=2.5cm, bottom=2.5cm
+]{geometry}
+
+% Cores IST sóbrias (paleta oficial)
+\usepackage[dvipsnames]{xcolor}
+\definecolor{ISTBlue}{HTML}{003580}
+\definecolor{ISTBlueMed}{HTML}{0052A3}
+\definecolor{ISTGrey}{HTML}{4A4A4A}
+\definecolor{Bordeaux}{HTML}{6B1A2A}
+
+% Referências IEEE
+\usepackage[
+  backend=biber,
+  style=ieee,
+  sorting=none
+]{biblatex}
+\addbibresource{references.bib}
+
+% Figuras e tabelas
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage[
+  justification=justified,
+  singlelinecheck=false,
+  font=small,
+  labelfont={bf,color=ISTBlue}
+]{caption}
+
+% Equações
+\usepackage{amsmath, amssymb}
+\numberwithin{equation}{chapter}
+
+% Hiperligações
+\usepackage[
+  colorlinks=true,
+  linkcolor=ISTBlue,
+  citecolor=ISTBlueMed,
+  urlcolor=ISTBlueMed
+]{hyperref}
+
+% Índices
+\usepackage[acronym, toc]{glossaries}
+
+% ─── Início do documento ─────────────────────────────────────────────────────
+\begin{document}
+
+% Capa
+\begin{titlepage}
+  \centering
+  \includegraphics[width=4cm]{ist_logo.pdf}\\[1cm]
+  {\color{ISTBlue}\Large\textbf{Instituto Superior Técnico}}\\[0.3cm]
+  {\large Universidade de Lisboa}\\[2cm]
+  {\LARGE\textbf{[TÍTULO EM PORTUGUÊS]}}\\[0.5cm]
+  {\large [Title in English]}\\[2cm]
+  {\large [Nome do Autor]}\\[0.3cm]
+  {\normalsize Número IST: [ISTXXXXXXX]}\\[1.5cm]
+  {\normalsize Dissertação para obtenção do Grau de Mestre em\\
+  \textbf{Engenharia Informática e de Computadores}}\\[1cm]
+  {\normalsize Orientador: Prof. [Nome], [Departamento], IST}\\[0.5cm]
+  {\normalsize Co-orientador: [Nome] (se aplicável)}\\[2cm]
+  {\normalsize [Mês] de [Ano]}
+\end{titlepage}
+
+% Matéria preliminar
+\frontmatter
+\include{chapters/agradecimentos}
+\include{chapters/resumo}
+\include{chapters/abstract}
+
+% Índices — cada um em página separada (regra IST obrigatória)
+\tableofcontents   \clearpage
+\listoffigures     \clearpage
+\listoftables      \clearpage
+\printglossary[type=acronym, title={Lista de Acrónimos}] \clearpage
+
+% Capítulos
+\mainmatter
+\include{chapters/01_introducao}
+\include{chapters/02_background}
+\include{chapters/03_metodologia}
+\include{chapters/04_implementacao}
+\include{chapters/05_avaliacao}
+\include{chapters/06_conclusao}
+
+% Bibliografia IEEE
+\printbibliography[heading=bibintoc, title={Referências Bibliográficas}]
+
+% Apêndices
+\appendix
+\include{chapters/apendice_a}
+
+\end{document}
+```
+
+### Legenda LaTeX — regra de justificação
+
+```latex
+% SEMPRE justification=justified nas legendas
+\captionsetup{justification=justified, singlelinecheck=false}
+```
+
+---
+
+## MÓDULO TRACK CHANGES — Edição rastreável de .docx
+
+Quando o Doctor edita um `.docx` existente com conteúdo do utilizador,
+usar **revision marks** para que o utilizador possa aceitar ou rejeitar cada alteração.
+
+```python
+from docx.oxml.ns import qn
+from docx.oxml import OxmlElement
+from datetime import datetime
+
+def add_tracked_insertion(paragraph, new_text: str, author: str = "Doctor AI"):
+    """
+    Insere texto como 'tracked insertion' — aparece a verde no Word com marca de revisão.
+    O utilizador pode aceitar ou rejeitar no Word com botão direito.
+    """
+    run = paragraph.add_run()
+    rPr = run._r.get_or_add_rPr()
+
+    ins = OxmlElement('w:ins')
+    ins.set(qn('w:id'), '1')
+    ins.set(qn('w:author'), author)
+    ins.set(qn('w:date'), datetime.now().strftime('%Y-%m-%dT%H:%M:%SZ'))
+
+    r = OxmlElement('w:r')
+    rPr_clone = OxmlElement('w:rPr')
+    r.append(rPr_clone)
+    t = OxmlElement('w:t')
+    t.text = new_text
+    t.set('{http://www.w3.org/XML/1998/namespace}space', 'preserve')
+    r.append(t)
+    ins.append(r)
+    paragraph._p.append(ins)
+
+
+def add_tracked_deletion(paragraph, old_text: str, author: str = "Doctor AI"):
+    """
+    Marca texto como 'tracked deletion' — aparece a vermelho riscado no Word.
+    """
+    run = paragraph.add_run()
+
+    del_elem = OxmlElement('w:del')
+    del_elem.set(qn('w:id'), '2')
+    del_elem.set(qn('w:author'), author)
+    del_elem.set(qn('w:date'), datetime.now().strftime('%Y-%m-%dT%H:%M:%SZ'))
+
+    r = OxmlElement('w:r')
+    dt = OxmlElement('w:delText')
+    dt.text = old_text
+    dt.set('{http://www.w3.org/XML/1998/namespace}space', 'preserve')
+    r.append(dt)
+    del_elem.append(r)
+    paragraph._p.append(del_elem)
+```
+
+### Regra de uso:
+- **Primeiro draft** (secções vazias/placeholders) → substituição directa, sem track changes
+- **Edição de conteúdo existente do utilizador** → obrigatoriamente com track changes
+- O relatório de edição deve indicar: N inserções, N deleções pendentes de aprovação
+
+---
+
 ## Regras absolutas
 
 1. **Rigor primeiro** — nunca fabricar resultados ou referências
@@ -1589,3 +1894,6 @@ especificar: "carregar projecto 1" ou "carregar projecto bitcoin".
 16. **Estado do projecto persiste** — o `projecto.json` é a fonte de verdade; nunca perder dados entre sessões
 17. **Um projecto = uma pasta numerada** — `~/Desktop/projectos/N_nome/` — nunca documentos soltos na Secretária
 18. **Edição in-place obrigatória** — nunca criar `_v2`, `_new`, `_updated`; editar sempre o mesmo `.docx` registado em `caminho_output`
+19. **Citações verificadas** — usar sempre o Citation Engine (DOI → CrossRef) para gerar referências IEEE; nunca fabricar metadados de citação
+20. **Track changes em edições** — quando editar um `.docx` existente com conteúdo já escrito pelo utilizador, usar revision marks em vez de substituição silenciosa
+21. **LaTeX como output alternativo** — quando solicitado, gerar sempre o template LaTeX IST v5.0 além do `.docx`
