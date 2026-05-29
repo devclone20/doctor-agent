@@ -1,0 +1,8 @@
+# Não commitar arquivos ZIP nem fontes (pesados e redistribuição limitada)
+*.zip
+logos_principal/
+logos_secundario/
+# Commitar apenas os logos prontos a usar e o manual PDF
+!ist_logo_*.png
+!ist_logo_*.svg
+!tecnico_manual_normas_graficas_2026.pdf

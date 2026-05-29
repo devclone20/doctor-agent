@@ -1742,6 +1742,117 @@ especificar: "carregar projecto 1" ou "carregar projecto bitcoin".
 
 ---
 
+## MÓDULO ASSETS IST — Logótipos e Recursos Multimédia Oficiais
+
+Todos os assets gráficos oficiais do IST estão disponíveis no repositório `doctor-ai20`,
+pasta `assets/ist/`. Descarregados directamente de `tecnico.ulisboa.pt` em Maio 2026.
+
+### Ficheiros disponíveis — uso directo
+
+```
+assets/ist/
+├── ist_logo_preto.png          ← Logo principal RGB PNG — para Word/DOCX (fundo branco)
+├── ist_logo_cor.png            ← Logo principal RGB PNG — versão a cores
+├── ist_logo_preto.svg          ← Logo principal SVG — para LaTeX (vectorial)
+├── ist_logo_cor.svg            ← Logo principal SVG — versão a cores vectorial
+├── ist_logo_vertical_preto.png ← Logo vertical PNG — para capas de dissertação
+├── ist_logo_vertical_cor.png   ← Logo vertical cor PNG — para capas a cores
+│
+├── tecnico_logo_principal.zip              ← Pack completo: PDF/JPG/PNG/SVG/EPS (CMYK+RGB)
+├── tecnico_logo_secundario_vertical.zip    ← Pack logo vertical completo
+├── tecnico_manual_normas_graficas_2026.pdf ← Manual oficial de normas gráficas IST 2026
+├── tecnico_template_apresentacao_16x9.pptx ← Template PowerPoint 16:9 oficial
+├── tecnico_template_papel_timbrado_a4.docx ← Template papel timbrado A4 Word oficial
+└── source_sans_3_font.zip                  ← Fonte oficial IST: Source Sans 3
+```
+
+### Fontes e recursos online
+
+```
+Logo e Manual de Identidade:
+  https://tecnico.ulisboa.pt/pt/sobre-o-tecnico/institucional/logo-e-manual-de-identidade/
+
+Banco de imagens institucional (fotos académicas):
+  https://gallery.tecnico.ulisboa.pt/s/banco_de_imagens_uxxi1wb6cx
+
+Flickr IST (fotografias eventos/campus):
+  https://flickr.com/photos/tecnicolisboa/
+
+Downloads directos (URL base: https://tecnico.ulisboa.pt):
+  /files/2026/01/tecnico_identidade_principal.zip
+  /files/2026/01/tecnico_identidade_secundaria_vertical_centrada.zip
+  /files/2026/01/tecnico_identidade_campi.zip
+  /files/2026/01/tecnico_identidade_departamentos.zip
+  /files/2026/01/tecnico_manualdenormasgraficas_2026.pdf
+  /files/2026/01/t-cnico-identidade-template_apresentacoes_pptx_16_9.pptx
+  /files/2026/03/template_folha_de_papel_timbrado_a4_tecnico-ulisboa.docx
+  /files/2026/01/source_sans_3.zip
+```
+
+### Normas gráficas IST 2026 — fonte oficial
+
+A fonte institucional oficial do IST é **Source Sans 3** (substituiu Arial como fonte
+principal na identidade visual 2026). Para documentos académicos (dissertações, relatórios),
+o Guia de Dissertação IST mantém **Arial** como tipo de letra obrigatório do texto.
+
+| Contexto | Fonte |
+|----------|-------|
+| Dissertação / relatório académico | Arial (norma guia IST) |
+| Apresentações PowerPoint / slides | Source Sans 3 (identidade IST 2026) |
+| Site, comunicação institucional | Source Sans 3 |
+
+### Inserir logo IST em Word (.docx) via python-docx
+
+```python
+from docx.shared import Cm
+from pathlib import Path
+
+# Caminho para o logo — usar sempre o PNG preto para documentos Word
+LOGO_PATH = Path(__file__).parent / "assets/ist/ist_logo_preto.png"
+# Ou logo vertical para capas de dissertação:
+LOGO_VERTICAL_PATH = Path(__file__).parent / "assets/ist/ist_logo_vertical_preto.png"
+
+def add_ist_logo(doc, vertical=False, width_cm=4.0):
+    """
+    Insere o logótipo oficial IST no documento Word.
+    vertical=True → logo vertical (para capas de dissertação)
+    vertical=False → logo horizontal principal (para cabeçalhos)
+    width_cm → largura em cm (padrão: 4cm conforme capa IST)
+    """
+    logo = LOGO_VERTICAL_PATH if vertical else LOGO_PATH
+    if not logo.exists():
+        # Fallback: descarregar logo em tempo real
+        import urllib.request
+        url = ("https://tecnico.ulisboa.pt/files/2026/01/"
+               "tecnico_identidade_principal.zip")
+        para = doc.add_paragraph()
+        para.add_run(f"[LOGO IST — descarregar em: {url}]").bold = True
+        return para
+
+    para = doc.add_paragraph()
+    run  = para.add_run()
+    run.add_picture(str(logo), width=Cm(width_cm))
+    para.alignment = WD_ALIGN_PARAGRAPH.LEFT   # logo à esquerda na capa IST
+    set_spacing(para, before=0, after=10)
+    return para
+```
+
+### Inserir logo IST em LaTeX
+
+```latex
+% No preâmbulo
+\usepackage{graphicx}
+
+% Na capa — logo vectorial SVG convertido para PDF
+% (converter: inkscape ist_logo_preto.svg --export-pdf=ist_logo.pdf)
+\includegraphics[width=4cm]{assets/ist/ist_logo_preto}
+
+% Ou directamente PNG
+\includegraphics[width=4cm]{assets/ist/ist_logo_preto.png}
+```
+
+---
+
 ## MÓDULO CITATION ENGINE — Citações automáticas via CrossRef/DOI
 
 Quando o utilizador fornece um DOI, um título de paper, ou pede citações IEEE/APA,
