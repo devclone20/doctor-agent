@@ -128,32 +128,94 @@ except ImportError:
     import docx
 ```
 
-### Paleta de cores oficial — APENAS cores sóbrias e escuras
-Nunca usar cores vivas, néon ou primárias. Trabalhos académicos exigem seriedade visual.
+### REGRA ABSOLUTA DE COR — TEXTO SEMPRE A PRETO
+
+**Todo o texto é preto. Sem excepção. Títulos, subtítulos, legendas, referências,
+cabeçalhos de tabela, pseudocódigo, notas — tudo a preto.**
+Destaque faz-se com **negrito** ou *itálico*, nunca com cor.
+Esta regra prevalece sobre qualquer preferência anterior e só pode ser alterada
+por instrução explícita do utilizador ("usa cor X").
+
+Fonte: Guia de Preparação da Dissertação IST — Direção Académica:
+*"texto a preto"* (secção 1.1, Formatação da Dissertação).
 
 ```python
 from docx.shared import RGBColor
 
-# ── Paleta aprovada ────────────────────────────────────────────────────────
-IST_BLUE        = RGBColor(0x00, 0x35, 0x80)   # azul IST escuro — títulos, cabeçalhos
-IST_BLUE_MED    = RGBColor(0x00, 0x52, 0xA3)   # azul médio — subtítulos, H3
-IST_SLATE       = RGBColor(0x1E, 0x3A, 0x5F)   # azul ardósia — destaques alternativos
-BORDEAUX        = RGBColor(0x6B, 0x1A, 0x2A)   # bordeaux escuro — alertas/notas críticas
-DARK_TEAL       = RGBColor(0x00, 0x4D, 0x40)   # verde escuro — tabelas secundárias
-CHARCOAL        = RGBColor(0x2C, 0x2C, 0x2C)   # quase preto — corpo de texto alternativo
-IST_GREY        = RGBColor(0x4A, 0x4A, 0x4A)   # cinzento — legendas, rodapés, subtexto
-BODY_BLACK      = RGBColor(0x1A, 0x1A, 0x1A)   # preto-quase para corpo de texto principal
-WHITE           = RGBColor(0xFF, 0xFF, 0xFF)   # branco — texto sobre fundo escuro
+# ── Paleta monocromática — ÚNICA paleta permitida ──────────────────────────
+TEXT_BLACK  = RGBColor(0x00, 0x00, 0x00)   # preto puro — títulos, corpo, legendas, refs
+GREY_LIGHT  = RGBColor(0xF2, 0xF2, 0xF2)   # cinzento muito claro — fundo alternado tabelas
+GREY_MED    = RGBColor(0xD0, 0xD0, 0xD0)   # cinzento médio — linhas de separação
+WHITE       = RGBColor(0xFF, 0xFF, 0xFF)   # branco — fundo cabeçalho tabela (texto preto)
 
-# ── Cores PROIBIDAS em trabalhos académicos ──────────────────────────────
-# RGBColor(0xFF, 0x00, 0x00)  → vermelho vivo
-# RGBColor(0x00, 0xFF, 0x00)  → verde néon
-# RGBColor(0xFF, 0xFF, 0x00)  → amarelo
-# RGBColor(0xFF, 0x69, 0xB4)  → rosa
-# Qualquer cor com luminosidade > 70% em contexto académico
+# ── Aliases de compatibilidade (não usar cor, só para não quebrar código antigo) ──
+IST_BLUE     = TEXT_BLACK   # redireccionado para preto
+IST_BLUE_MED = TEXT_BLACK
+IST_GREY     = TEXT_BLACK
+BODY_BLACK   = TEXT_BLACK
+CHARCOAL     = TEXT_BLACK
+
+# ── CORES COMPLETAMENTE PROIBIDAS em qualquer elemento de texto ──────────
+# Nenhuma RGBColor com valores diferentes de (0,0,0), (255,255,255) ou tons
+# de cinzento neutro deve aparecer em texto, títulos ou legendas.
 ```
 
-### Configuração de página A4 padrão IST
+### Normas oficiais IST — Guia de Preparação da Dissertação (Direção Académica)
+
+Extraídas do documento oficial IST. Estas normas prevalecem sobre qualquer outra
+configuração anterior.
+
+```
+ESTRUTURA OBRIGATÓRIA (ordem exacta):
+  1. Capa
+  2. Agradecimentos (facultativo)
+  3. Resumo PT + Abstract EN (máx. 250 palavras cada, 4-6 palavras-chave)
+  4. Índice
+  5. Lista de quadros/figuras + Lista de abreviações
+  6. Texto principal (máx. 80 páginas)
+  7. Referências bibliográficas
+  8. Anexos (se existirem — conjunto total máx. 100 páginas)
+
+FORMATAÇÃO OFICIAL IST:
+  • Tamanho: A4
+  • Tipo de letra: Arial (ou semelhante) — todo o documento
+  • Tamanho de letra corpo: 10 pontos  ← oficial IST (não 11.5pt)
+  • Texto: a preto — sem excepção
+  • Espaçamento: 1,5 linhas
+  • Notas de pé-de-página: 1 linha, 9 pontos, usar moderadamente
+  • Margens: 2,5 cm nos quatro lados
+  • Numeração de página: arábica, em baixo centrado ou à direita
+  • Sem cabeçalho/rodapé (excepto número de página em 9pt)
+  • Equações: centradas, numeradas consecutivamente
+  • Tabelas/Figuras: centradas, numeradas, com legenda, junto do texto
+  • Referências: standard da área (IST Engenharia → IEEE)
+
+CAPA — campos obrigatórios e tamanhos (Figura 1 do guia):
+  • Logótipo IST
+  • Título da dissertação: 16pt bold
+  • Subtítulo (facultativo): 14pt normal
+  • Nome completo do candidato: 14pt bold
+  • "Dissertação para obtenção do Grau de Mestre em...": 12pt normal
+  • Nome do curso: 16pt bold
+  • Orientador(es) (máx. 2): 12pt normal
+  • Júri (Presidente, Orientador, Vogais): cabeçalho 14pt bold, membros 12pt normal
+  • Data (mês e ano): 14pt bold
+
+LOMBADA (se impressa):
+  • Logótipo IST (alinhado à esquerda)
+  • Título: 12pt bold (alinhado ao centro)
+  • Subtítulo: 10pt normal (alinhado ao centro)
+  • Nome do candidato: 10pt bold (alinhado à direita)
+  • Margem: 2,0 cm topo e base
+
+RESUMO ALARGADO (acompanha a dissertação):
+  • Formato: artigo científico/técnico, máx. 10 páginas A4
+  • Língua: inglês obrigatório
+  • Modelo: o mesmo da dissertação, salvo indicação do curso
+```
+
+### Configuração de página A4 — norma oficial IST
+
 ```python
 from docx import Document
 from docx.shared import Cm, Pt
@@ -161,32 +223,33 @@ from docx.enum.text import WD_ALIGN_PARAGRAPH, WD_LINE_SPACING
 
 doc = Document()
 for section in doc.sections:
-    section.page_width    = Cm(21)
-    section.page_height   = Cm(29.7)
-    section.left_margin   = Cm(2.5)
+    section.page_width    = Cm(21)      # A4
+    section.page_height   = Cm(29.7)    # A4
+    section.left_margin   = Cm(2.5)     # IST oficial
     section.right_margin  = Cm(2.5)
     section.top_margin    = Cm(2.5)
     section.bottom_margin = Cm(2.5)
 ```
 
-### Funções base obrigatórias — usar SEMPRE
+### Funções base obrigatórias
 
 ```python
 from docx.oxml.ns import qn
 from docx.oxml import OxmlElement
 
-def set_spacing(para, before=0, after=6, line=1.15):
+def set_spacing(para, before=0, after=6, line=1.5):
+    """Espaçamento padrão IST: 1,5 linhas conforme guia oficial."""
     pf = para.paragraph_format
     pf.space_before        = Pt(before)
     pf.space_after         = Pt(after)
     pf.line_spacing_rule   = WD_LINE_SPACING.MULTIPLE
-    pf.line_spacing        = line
+    pf.line_spacing        = line          # 1.5 = norma IST oficial
 
 def add_page_break(doc):
     doc.add_page_break()
 
-def add_separator(doc, color='C8D8EC'):
-    """Linha divisória horizontal subtil."""
+def add_separator(doc):
+    """Linha divisória horizontal — cinzento neutro, sem cor."""
     para = doc.add_paragraph()
     set_spacing(para, 4, 4)
     pPr  = para._p.get_or_add_pPr()
@@ -195,12 +258,12 @@ def add_separator(doc, color='C8D8EC'):
     bot.set(qn('w:val'),   'single')
     bot.set(qn('w:sz'),    '4')
     bot.set(qn('w:space'), '1')
-    bot.set(qn('w:color'), color)
+    bot.set(qn('w:color'), 'D0D0D0')    # cinzento neutro — sem cor
     pBdr.append(bot)
     pPr.append(pBdr)
 
 def shade_cell(cell, hex_fill):
-    """Aplica cor de fundo a uma célula de tabela."""
+    """Fundo de célula de tabela — usar só cinzentos neutros."""
     tc   = cell._tc
     tcPr = tc.get_or_add_tcPr()
     shd  = OxmlElement('w:shd')
@@ -210,112 +273,117 @@ def shade_cell(cell, hex_fill):
     tcPr.append(shd)
 ```
 
-### Funções de tipografia — corpo, títulos, legendas
+### Funções de tipografia — tudo a preto, Arial, 10pt (norma IST)
 
 ```python
 def add_heading(doc, text, level=1, before=18, after=8):
     """
-    H1 → 18pt, IST_BLUE, Arial, bold
-    H2 → 14pt, IST_BLUE, Arial, bold
-    H3 → 12pt, IST_BLUE_MED, Arial, bold
-    H4 → 11pt, IST_GREY, Arial, bold+italic
+    Todos os títulos a preto. Hierarquia por tamanho e negrito — SEM COR.
+    Fonte: Arial conforme guia IST oficial.
+
+    H1 → 14pt, preto, bold          (capítulos principais)
+    H2 → 12pt, preto, bold          (subsecções)
+    H3 → 11pt, preto, bold          (sub-subsecções)
+    H4 → 10pt, preto, bold+itálico  (parágrafos com título)
     """
     cfg = {
-        1: (18, IST_BLUE,     True,  False),
-        2: (14, IST_BLUE,     True,  False),
-        3: (12, IST_BLUE_MED, True,  False),
-        4: (11, IST_GREY,     True,  True),
+        1: (14, True,  False),
+        2: (12, True,  False),
+        3: (11, True,  False),
+        4: (10, True,  True),
     }
-    size, color, bold, italic = cfg[level]
+    size, bold, italic = cfg[level]
     para = doc.add_paragraph()
     run  = para.add_run(text)
     run.font.name      = 'Arial'
     run.font.size      = Pt(size)
-    run.font.color.rgb = color
+    run.font.color.rgb = TEXT_BLACK     # SEMPRE PRETO
     run.bold           = bold
     run.italic         = italic
     set_spacing(para, before=before, after=after)
     return para
 
 def add_body(doc, text, justify=True, indent=False):
-    """Parágrafo de corpo: Times New Roman 11.5pt, justificado."""
+    """
+    Parágrafo de corpo: Arial 10pt, preto, espaçamento 1,5 linhas.
+    Norma IST oficial: Arial 10pt (não Times New Roman, não 11.5pt).
+    """
     para = doc.add_paragraph()
     run  = para.add_run(text)
-    run.font.name      = 'Times New Roman'
-    run.font.size      = Pt(11.5)
-    run.font.color.rgb = BODY_BLACK
+    run.font.name      = 'Arial'
+    run.font.size      = Pt(10)         # 10pt — norma IST oficial
+    run.font.color.rgb = TEXT_BLACK     # SEMPRE PRETO
     if justify:
         para.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
     if indent:
-        para.paragraph_format.first_line_indent = Cm(1.2)
-    set_spacing(para, before=0, after=6, line=1.2)
+        para.paragraph_format.first_line_indent = Cm(1.0)
+    set_spacing(para, before=0, after=6, line=1.5)
     return para
 
 def add_caption(doc, text):
     """
     Legenda de figura ou tabela.
-    REGRA: sempre justificada (WD_ALIGN_PARAGRAPH.JUSTIFY).
-    Arial 9.5pt, IST_GREY, itálico. Número em negrito IST_BLUE.
+    REGRA: sempre justificada. Arial 9pt, preto. Número em negrito.
+    Sem cor — negrito distingue o número do resto da legenda.
     """
     para = doc.add_paragraph()
-    # Separar "Figura N —" do resto para aplicar negrito no número
     parts = text.split(' — ', 1)
     if len(parts) == 2:
         r1 = para.add_run(parts[0] + ' — ')
         r1.font.name      = 'Arial'
-        r1.font.size      = Pt(9.5)
+        r1.font.size      = Pt(9)
         r1.bold           = True
-        r1.font.color.rgb = IST_BLUE
+        r1.font.color.rgb = TEXT_BLACK   # PRETO
         r2 = para.add_run(parts[1])
         r2.font.name      = 'Arial'
-        r2.font.size      = Pt(9.5)
+        r2.font.size      = Pt(9)
         r2.italic         = True
-        r2.font.color.rgb = IST_GREY
+        r2.font.color.rgb = TEXT_BLACK   # PRETO
     else:
         r = para.add_run(text)
         r.font.name      = 'Arial'
-        r.font.size      = Pt(9.5)
+        r.font.size      = Pt(9)
         r.italic         = True
-        r.font.color.rgb = IST_GREY
+        r.font.color.rgb = TEXT_BLACK    # PRETO
     para.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY   # ← SEMPRE JUSTIFICADO
     set_spacing(para, before=4, after=10)
     return para
 
 def add_table_caption(doc, text):
-    """Legenda de tabela — vai ACIMA da tabela, justificada."""
-    return add_caption(doc, text)   # mesma função, mesma regra
+    """Legenda de tabela — vai ACIMA da tabela, justificada, preto."""
+    return add_caption(doc, text)
 ```
 
 ### Equações numeradas
 
 ```python
 def add_equation(doc, text, number):
-    """Equação centrada com número alinhado à direita."""
+    """Equação centrada com número alinhado à direita. Tudo a preto."""
     para = doc.add_paragraph()
     para.alignment = WD_ALIGN_PARAGRAPH.CENTER
     run  = para.add_run(text)
-    run.font.name      = 'Times New Roman'
-    run.font.size      = Pt(11.5)
-    run.font.color.rgb = BODY_BLACK
+    run.font.name      = 'Arial'
+    run.font.size      = Pt(10)
+    run.font.color.rgb = TEXT_BLACK
     num  = para.add_run(f'\t({number})')
     num.font.name      = 'Arial'
-    num.font.size      = Pt(9.5)
-    num.font.color.rgb = IST_GREY
+    num.font.size      = Pt(9)
+    num.font.color.rgb = TEXT_BLACK
     para.paragraph_format.tab_stops.add_tab_stop(
         Cm(15), WD_ALIGN_PARAGRAPH.RIGHT)
-    set_spacing(para, 6, 6, 1.0)
+    set_spacing(para, 6, 6, 1.5)
     return para
 ```
 
-### Tabelas estilo IST
+### Tabelas — cabeçalho preto sobre cinzento claro
 
 ```python
 def add_ist_table(doc, headers, rows, caption_text=None):
     """
-    Tabela com:
-    - Cabeçalho: fundo IST_BLUE, texto branco
-    - Linhas alternadas: branco / #E8F0F8
-    - Legenda acima, justificada
+    Tabela IST — tudo a preto.
+    Cabeçalho: fundo cinzento escuro (#404040), texto branco.
+    Linhas alternadas: branco / cinzento muito claro (#F2F2F2).
+    Sem azuis, sem cores. Legenda acima, justificada.
     """
     if caption_text:
         add_table_caption(doc, caption_text)
@@ -323,38 +391,38 @@ def add_ist_table(doc, headers, rows, caption_text=None):
     tbl = doc.add_table(rows=1 + len(rows), cols=len(headers))
     tbl.style = 'Table Grid'
 
-    # Cabeçalho
+    # Cabeçalho — cinzento escuro neutro, texto branco
     for j, h in enumerate(headers):
         cell = tbl.rows[0].cells[j]
         cell.text = ''
         run = cell.paragraphs[0].add_run(h)
         run.font.bold      = True
         run.font.name      = 'Arial'
-        run.font.size      = Pt(9.5)
-        run.font.color.rgb = WHITE
-        shade_cell(cell, '003580')
+        run.font.size      = Pt(9)
+        run.font.color.rgb = WHITE          # branco sobre fundo escuro
+        shade_cell(cell, '404040')          # cinzento escuro neutro
 
-    # Linhas de dados
+    # Linhas de dados — preto, alternância cinzento muito claro
     for i, row_data in enumerate(rows):
-        fill = 'E8F0F8' if i % 2 == 0 else 'FFFFFF'
+        fill = 'F2F2F2' if i % 2 == 0 else 'FFFFFF'
         for j, val in enumerate(row_data):
             cell = tbl.rows[i + 1].cells[j]
             cell.text = ''
             run = cell.paragraphs[0].add_run(str(val))
             run.font.name      = 'Arial'
-            run.font.size      = Pt(9.5)
-            run.font.color.rgb = BODY_BLACK
+            run.font.size      = Pt(9)
+            run.font.color.rgb = TEXT_BLACK  # SEMPRE PRETO
             if fill != 'FFFFFF':
                 shade_cell(cell, fill)
 
     return tbl
 ```
 
-### Pseudocódigo / Algoritmos
+### Pseudocódigo / Algoritmos — preto e cinzento
 
 ```python
 def add_algorithm_header(doc, title):
-    """Barra de cabeçalho azul IST para caixas de algoritmo."""
+    """Cabeçalho de caixa de algoritmo — cinzento escuro, texto branco."""
     para = doc.add_paragraph()
     run  = para.add_run(title)
     run.font.name      = 'Arial'
@@ -363,48 +431,153 @@ def add_algorithm_header(doc, title):
     run.font.color.rgb = WHITE
     pPr = para._p.get_or_add_pPr()
     shd = OxmlElement('w:shd')
-    shd.set(qn('w:fill'),  '003580')
+    shd.set(qn('w:fill'),  '404040')    # cinzento escuro neutro
     shd.set(qn('w:color'), 'auto')
     shd.set(qn('w:val'),   'clear')
     pPr.append(shd)
     set_spacing(para, 8, 0)
 
 def add_algorithm_line(doc, text, indent=0, keyword=False, comment=False):
-    """Uma linha de pseudocódigo com indentação e coloração semântica."""
+    """Linha de pseudocódigo. Tudo a preto — negrito para keywords."""
     para = doc.add_paragraph()
     para.paragraph_format.left_indent = Cm(0.4 + indent * 0.6)
     run  = para.add_run(text)
-    run.font.name = 'Courier New'
-    run.font.size = Pt(9)
+    run.font.name      = 'Courier New'
+    run.font.size      = Pt(9)
+    run.font.color.rgb = TEXT_BLACK     # SEMPRE PRETO
     if keyword:
-        run.bold           = True
-        run.font.color.rgb = IST_BLUE
+        run.bold   = True               # keywords em negrito, não em cor
     elif comment:
-        run.italic         = True
-        run.font.color.rgb = IST_GREY
-    else:
-        run.font.color.rgb = BODY_BLACK
-    set_spacing(para, 0, 1, 1.3)
+        run.italic = True               # comentários em itálico, não em cor
+    set_spacing(para, 0, 1, 1.5)
 ```
 
 ### Referências bibliográficas IEEE
 
 ```python
 def add_reference(doc, number, text):
-    """Referência IEEE com numeração azul e hanging indent."""
+    """Referência IEEE — tudo a preto. Número em negrito."""
     para = doc.add_paragraph()
     para.paragraph_format.left_indent         = Cm(0.8)
     para.paragraph_format.first_line_indent   = Cm(-0.8)
     r_num = para.add_run(f'[{number}] ')
     r_num.font.name      = 'Arial'
-    r_num.font.size      = Pt(10)
+    r_num.font.size      = Pt(9)
     r_num.bold           = True
-    r_num.font.color.rgb = IST_BLUE
+    r_num.font.color.rgb = TEXT_BLACK    # PRETO — não azul
     r_txt = para.add_run(text)
-    r_txt.font.name      = 'Times New Roman'
-    r_txt.font.size      = Pt(10)
-    r_txt.font.color.rgb = BODY_BLACK
-    set_spacing(para, 2, 4, 1.15)
+    r_txt.font.name      = 'Arial'
+    r_txt.font.size      = Pt(9)
+    r_txt.font.color.rgb = TEXT_BLACK
+    set_spacing(para, 2, 4, 1.5)
+```
+
+### Capa oficial IST — função Word
+
+```python
+def add_capa_ist(doc, titulo, subtitulo=None, nome_candidato='',
+                 nome_curso='', orientadores=None, juri=None,
+                 mes_ano='', titulo_en=None):
+    """
+    Capa da dissertação IST conforme Guia Oficial (Figura 1).
+    Todos os elementos a preto. Tamanhos conforme guia.
+    """
+    orientadores = orientadores or []
+    juri = juri or {}
+
+    # Logo IST placeholder
+    p_logo = doc.add_paragraph()
+    p_logo.alignment = WD_ALIGN_PARAGRAPH.LEFT
+    r_logo = p_logo.add_run('[LOGÓTIPO IST — inserir ist_logo.pdf]')
+    r_logo.font.name = 'Arial'; r_logo.font.size = Pt(10)
+    r_logo.bold = True; r_logo.font.color.rgb = TEXT_BLACK
+    set_spacing(p_logo, before=0, after=20)
+
+    # Título — 16pt bold (norma IST)
+    p_tit = doc.add_paragraph()
+    p_tit.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    r_tit = p_tit.add_run(titulo)
+    r_tit.font.name = 'Arial'; r_tit.font.size = Pt(16)
+    r_tit.bold = True; r_tit.font.color.rgb = TEXT_BLACK
+    set_spacing(p_tit, before=30, after=4)
+
+    # Título EN (se fornecido) — 12pt normal
+    if titulo_en:
+        p_ten = doc.add_paragraph()
+        p_ten.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        r_ten = p_ten.add_run(f'({titulo_en})')
+        r_ten.font.name = 'Arial'; r_ten.font.size = Pt(12)
+        r_ten.font.color.rgb = TEXT_BLACK
+        set_spacing(p_ten, before=2, after=4)
+
+    # Subtítulo — 14pt normal
+    if subtitulo:
+        p_sub = doc.add_paragraph()
+        p_sub.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        r_sub = p_sub.add_run(subtitulo)
+        r_sub.font.name = 'Arial'; r_sub.font.size = Pt(14)
+        r_sub.font.color.rgb = TEXT_BLACK
+        set_spacing(p_sub, before=2, after=10)
+
+    # Nome do candidato — 14pt bold
+    p_nome = doc.add_paragraph()
+    p_nome.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    r_nome = p_nome.add_run(nome_candidato)
+    r_nome.font.name = 'Arial'; r_nome.font.size = Pt(14)
+    r_nome.bold = True; r_nome.font.color.rgb = TEXT_BLACK
+    set_spacing(p_nome, before=16, after=4)
+
+    # "Dissertação para obtenção..." — 12pt normal
+    p_deg = doc.add_paragraph()
+    p_deg.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    r_deg = p_deg.add_run('Dissertação para obtenção do Grau de Mestre em\n'
+                           '(Thesis to obtain the Master of Science Degree in)')
+    r_deg.font.name = 'Arial'; r_deg.font.size = Pt(12)
+    r_deg.font.color.rgb = TEXT_BLACK
+    set_spacing(p_deg, before=8, after=4)
+
+    # Nome do curso — 16pt bold
+    p_curso = doc.add_paragraph()
+    p_curso.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    r_curso = p_curso.add_run(nome_curso)
+    r_curso.font.name = 'Arial'; r_curso.font.size = Pt(16)
+    r_curso.bold = True; r_curso.font.color.rgb = TEXT_BLACK
+    set_spacing(p_curso, before=4, after=12)
+
+    # Orientadores — 12pt normal
+    for orientador in orientadores:
+        p_ori = doc.add_paragraph()
+        p_ori.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        r_ori = p_ori.add_run(f'Orientador/Supervisor: {orientador}')
+        r_ori.font.name = 'Arial'; r_ori.font.size = Pt(12)
+        r_ori.font.color.rgb = TEXT_BLACK
+        set_spacing(p_ori, before=2, after=2)
+
+    # Júri — cabeçalho 14pt bold, membros 12pt normal
+    if juri:
+        p_j_hdr = doc.add_paragraph()
+        p_j_hdr.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        r_j_hdr = p_j_hdr.add_run('Júri / Examination Committee')
+        r_j_hdr.font.name = 'Arial'; r_j_hdr.font.size = Pt(14)
+        r_j_hdr.bold = True; r_j_hdr.font.color.rgb = TEXT_BLACK
+        set_spacing(p_j_hdr, before=12, after=4)
+        for role, name in juri.items():
+            p_jm = doc.add_paragraph()
+            p_jm.alignment = WD_ALIGN_PARAGRAPH.CENTER
+            r_jm = p_jm.add_run(f'{role}: {name}')
+            r_jm.font.name = 'Arial'; r_jm.font.size = Pt(12)
+            r_jm.font.color.rgb = TEXT_BLACK
+            set_spacing(p_jm, before=2, after=2)
+
+    # Data — 14pt bold
+    p_data = doc.add_paragraph()
+    p_data.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    r_data = p_data.add_run(mes_ano)
+    r_data.font.name = 'Arial'; r_data.font.size = Pt(14)
+    r_data.bold = True; r_data.font.color.rgb = TEXT_BLACK
+    set_spacing(p_data, before=16, after=0)
+
+    add_page_break(doc)
 ```
 
 ---
@@ -1876,7 +2049,8 @@ def add_tracked_deletion(paragraph, old_text: str, author: str = "Doctor AI"):
 
 ## Regras absolutas
 
-1. **Rigor primeiro** — nunca fabricar resultados ou referências
+1. **Texto sempre a preto** — sem cor em nenhum elemento (títulos, legendas, referências, pseudocódigo). Destaque = negrito ou itálico. Só muda por ordem explícita do utilizador.
+2. **Rigor primeiro** — nunca fabricar resultados ou referências
 2. **Se não sabes, diz** — pesquisa em vez de inventar
 3. **Citar correctamente sempre** — nunca citar o que não verificaste
 4. **LaTeX/Word válido** — o código que produzes compila/corre sem erros
