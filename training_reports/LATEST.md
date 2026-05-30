@@ -1,29 +1,44 @@
-# Último Treino: 2026-05-30 05:00 UTC
+# 📚 Último Treino: 2026-05-30 19:00 UTC
 
-**Sessão:** Manhã  
-**Agentes:** Doctor | Hacker | Rider  
-**Papers IST Scholar:** 2 (EIC — Engenharia Informática e de Computadores)  
-**Repos GitHub pesquisados:** 16  
-**Propostas:** 9  
-**Relatório completo:** training_reports/2026-05-30_05h.md
+**Sessão:** Noite
+**Agentes:** Doctor | Hacker | Rider
+**Papers IST Scholar:** 2 (EIC — Engenharia Informática e de Computadores — Federated Learning + Privacy-Preserving ML)
+**Tema IST:** Federated Learning + Privacy-Preserving ML (diferente da manhã: NLP/LLMs)
+**Deep-dive:** Hacker (MÓDULO Supply Chain Security + MÓDULO Secrets Baseline)
+**Repos GitHub pesquisados:** 12
+**Propostas:** 9 (DOC-7,8,9; HACK-7,8,9; RID-7,8,9)
+**Relatório completo:** training_reports/2026-05-30_19h.md
 
 ---
 
 ## Papers IST EIC desta sessão
-1. **EuroLLM: Multilingual Language Models for Europe** — Martins, Fernandes et al. (INESC-ID/IST, 2024) — arXiv:2409.16235
-2. **Aligning NMT Models: Human Feedback in Training and Inference** — Patrick Fernandes (IST/CMU, 2023) — arXiv:2311.09132
+1. **Federated Learning: A Survey on Privacy-Preserving Collaborative Intelligence** — arXiv:2504.17703 (2025) — DP, SecAgg, HE, Split Learning, threat models
+2. **SecureDyn-FL: A Robust Privacy-Preserving Federated Learning Framework for Intrusion Detection in IoT Networks** — arXiv:2601.06466 (2026) — Layer-wise DP + Krum Byzantine resilience + dynamic client selection; acc >92% com ε=1.0
 
 ## Temas EIC em destaque
-- Large Language Models multilingues (EuroLLM — INESC-ID/IST)
-- RLHF e alinhamento de modelos NMT
-- ASR para Português (baixo recurso)
-- LLMs em domínios clínicos
+- Federated Learning + Differential Privacy (tema emergente em dissertações MEIC 2025-2026)
+- Byzantine-Resilient FL (Krum, FedProx, tolerância a 30% clientes maliciosos)
+- IoT Security com ML federado (NSL-KDD, CIC-IDS2017, TON_IoT como benchmarks padrão)
+- Privacy-Utility Trade-off formal (ε-DP vs. accuracy degradation)
 
 ## Destaques por agente
-- **Doctor:** novathesis (2k stars), claude-prism offline-first, citation-formatter automático arXiv/IEEE; padrões IST: resumo bilingue PT/EN, agradecimentos FCT, nomenclatura técnica PT
-- **Hacker:** OWASP Top 10 2025 (A03 Supply Chain + A10 Exception Handling), 248 CWEs, output SARIF para GitHub Security tab; fail-open como vulnerabilidade
-- **Rider:** Anthropic orchestrator-worker pattern (AdvancedResearch), Plan-Agent-with-Meta-Agent, agentfield identity tracking; LangGraph lidera enterprise em 2026
+- **Doctor:** Science.md (Write→Compile→Share), pandoc+CSL por conferência, Zotero API; vocabulário FL+privacidade IST verificado; padrões Threat Model para dissertações MEIC
+- **Hacker:** dep-scan v6.1.0 SBOM+CSAF VEX (EU Cyber Resilience Act 2025); detect-secrets baseline brownfield; stack 3 camadas (pre-commit+CI+release); cve-bin-tool para binários C/C++
+- **Rider:** kyegomez/swarms DAG topologies (6.75k stars); desplega-ai/agent-swarm memória persistente entre sessões; Warren (ex-overstory) merge queue 4 níveis
 
 ---
 
-*Sessão anterior: `training_reports/night_1.md` (ciclo nocturno de auto-melhoria)*
+## Histórico recente de sessões
+
+| Data | Sessão | Tema IST | Deep-dive | Propostas |
+|------|--------|----------|-----------|-----------|
+| 2026-05-29 manhã | Manhã | Cloud Load Balancing MARL | (Doctor primário) | 9 |
+| 2026-05-29 noite | Noite | Quarto + NOVAthesis + Docling (ferramentas doc) | Doctor | 9 |
+| 2026-05-30 manhã | Manhã | NLP Transformers / LLMs (EuroLLM, RLHF) | — | 9 |
+| 2026-05-30 noite | Noite | Federated Learning + Privacy-Preserving ML | **Hacker** | 9 |
+
+**Nota:** rider.md contém RID-1 a RID-6 já aplicados. HACK-7,8,9 e DOC-7,8,9 desta sessão aguardam aprovação humana.
+
+---
+
+*Sessão anterior: `training_reports/2026-05-30_05h.md` (manhã — NLP/LLMs)*
