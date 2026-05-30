@@ -1,42 +1,29 @@
-# Último Treino: 2026-05-29 (Night 1 — Sessão Nocturna de Auto-Melhoria)
+# Último Treino: 2026-05-30 05:00 UTC
 
-**Sessão:** Night 1 de 7 — Ciclo de Auto-Melhoria Nocturna  
-**Agente:** Doctor  
-**Foco:** IST Standards + Docling + NOVAthesis 2025/2026  
-**Relatório completo:** `training_reports/night_1.md`
-
----
-
-## Destaques da Night 1
-
-- **NOVAthesis v7.10.1** (2026-02-10): versão mais recente; package `aidisclose` para declaração obrigatória de uso de IA em dissertações (obrigatório IST 2026+)
-- **Docling**: cresceu de ~14k para 37k+ stars; Granite-Docling (Jan 2026) é o novo estado da arte para ingestão estrutural de PDFs académicos
-- **IST-UL v5.0** (Out 2025): template oficial do IST criado por Prof. Rui Santos Cruz; distinto do NOVAthesis
-- **Introdução Modelo IST gerada e auto-avaliada**: score 9.3/10 — acima do threshold IST (7/10)
-- **Score de melhoria Night 1 vs baseline: 8/10**
+**Sessão:** Manhã  
+**Agentes:** Doctor | Hacker | Rider  
+**Papers IST Scholar:** 2 (EIC — Engenharia Informática e de Computadores)  
+**Repos GitHub pesquisados:** 16  
+**Propostas:** 9  
+**Relatório completo:** training_reports/2026-05-30_05h.md
 
 ---
 
-## Estado do ciclo de 7 noites
+## Papers IST EIC desta sessão
+1. **EuroLLM: Multilingual Language Models for Europe** — Martins, Fernandes et al. (INESC-ID/IST, 2024) — arXiv:2409.16235
+2. **Aligning NMT Models: Human Feedback in Training and Inference** — Patrick Fernandes (IST/CMU, 2023) — arXiv:2311.09132
 
-| Noite | Status | Foco |
-|-------|--------|------|
-| Night 1 | ✅ Completa | IST Standards + Docling + NOVAthesis |
-| Night 2 | ⏳ Pendente | Papers de Ponta 2025 (arXiv + Semantic Scholar) |
-| Night 3 | ⏳ Pendente | Qualidade de Escrita Científica |
-| Night 4 | ⏳ Pendente | Gestão de Citações e BibTeX |
-| Night 5 | ⏳ Pendente | Cloud Architecture + Production ML |
-| Night 6 | ⏳ Pendente | Benchmark de Dissertação |
-| Night 7 | ⏳ Pendente | Síntese Final e Actualização do SKILL |
+## Temas EIC em destaque
+- Large Language Models multilingues (EuroLLM — INESC-ID/IST)
+- RLHF e alinhamento de modelos NMT
+- ASR para Português (baixo recurso)
+- LLMs em domínios clínicos
 
----
-
-## Ficheiros actualizados nesta sessão
-
-- `doctor/knowledge/wiki/ist_standards.md` — secções novas: Templates LaTeX comparação, Critérios de avaliação, Docling workflow
-- `training_reports/night_1.md` — relatório completo Night 1
-- `training_reports/LATEST.md` — este ficheiro
+## Destaques por agente
+- **Doctor:** novathesis (2k stars), claude-prism offline-first, citation-formatter automático arXiv/IEEE; padrões IST: resumo bilingue PT/EN, agradecimentos FCT, nomenclatura técnica PT
+- **Hacker:** OWASP Top 10 2025 (A03 Supply Chain + A10 Exception Handling), 248 CWEs, output SARIF para GitHub Security tab; fail-open como vulnerabilidade
+- **Rider:** Anthropic orchestrator-worker pattern (AdvancedResearch), Plan-Agent-with-Meta-Agent, agentfield identity tracking; LangGraph lidera enterprise em 2026
 
 ---
 
-*Sessão anterior: `training_reports/2026-05-29_19h.md` (treino multi-agente, noite)*
+*Sessão anterior: `training_reports/night_1.md` (ciclo nocturno de auto-melhoria)*
