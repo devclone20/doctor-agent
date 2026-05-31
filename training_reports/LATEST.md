@@ -1,36 +1,32 @@
-# 📚 Último Treino: 2026-05-30 23:00 UTC — Night 2
+# 📚 Último Treino: 2026-05-31 05:00 UTC
 
-**Sessão:** Nocturna (Night 2 do ciclo de 7 noites)  
-**Agente:** Doctor  
-**Foco:** Papers de Ponta 2025 — Top 10 ML/DL/AI
+**Sessão:** Manhã
+**Agentes:** Doctor | Hacker | Rider
+**Papers IST Scholar / INESC-ID:** 2 (EIC — Engenharia Informática e Computadores)
+**Repos / ferramentas GitHub pesquisadas:** 18
+**Insights cross-training:** 4
+**Propostas:** 6
+**Relatório completo:** training_reports/2026-05-31_05h.md
 
 ---
 
-## Resumo Night 2
+## Papers EIC IST desta sessão
 
-**Wiki actualizada:** `doctor/knowledge/wiki/ml_deeplearning.md`  
-**Secção adicionada:** "Estado da Arte 2025 — Top 10 Papers ML/DL/AI"
+| # | Título | Autores | Ano | URL |
+|---|--------|---------|-----|-----|
+| 1 | INESC-ID @ eRisk 2025: Fine-Tuned, Similarity-Based, and Prompt-Based Approaches to Depression Symptom Identification | Diogo A.P. Nunes, Eugénio Ribeiro (IST + INESC-ID) | 2025 | https://arxiv.org/abs/2506.02924 |
+| 2 | Accelerat.AI: INESC-ID/IST contributions towards improved conversational agents in European Portuguese | Alberto Abad, Sérgio Paulo, Rubén Solera-Ureña, Anna Pompili (INESC-ID + IST) | 2024 | https://doi.org/10.21437/IberSPEECH.2024-61 |
 
-### Top 10 verificados:
-| # | Paper | arXiv | Detalhe |
-|---|-------|-------|---------|
-| P1 | DeepSeek-R1: Reasoning via RL | 2501.12948 | ~5,517 citações — RL puro (GRPO), AIME 71% |
-| P2 | DeepSeek-V3 Technical Report | 2412.19437 | 671B MoE, 2.788M GPU-hours, estado da arte |
-| P3 | Qwen2.5 Technical Report | 2412.15115 | 18T tokens, 72B ≥ Llama-3-405B |
-| P4 | s1: Simple Test-Time Scaling | 2501.19393 | EMNLP 2025, 1K exemplos, reproduz o1-preview |
-| P5 | Scaling LLM Test-Time Compute | 2408.03314 | Google DeepMind, PRMs, compute-optimal inference |
-| P6 | Llama 3 Herd of Models | 2407.21783 | Meta, 405B dense, base para 2025 |
-| P7 | InternVL2.5 | 2412.05271 | 1º open-source >70% MMMU |
-| P8 | AlphaGeometry2 | 2502.03544 | Nature Nov 2025, 84% IMO geometry |
-| P9 | Gemma 3 Technical Report | 2503.19786 | 1B-27B multimodal, 128K context |
-| P10 | Gemini 2.5 | 2507.06261 | Frontier reasoning + 1M context + 3h video |
+## Propostas em espera
 
-### Top 3 aprendizagens:
-1. **GRPO** é o novo standard para RL em LLMs — mais eficiente que PPO em memória
-2. **Test-Time Scaling** é o paradigma dominante de 2025 (o1, R1, s1, QwQ)
-3. **MoE** democratizou modelos de escala massiva (DeepSeek-V3: 671B total, custo 5-10× menor)
-
-### Score de melhoria: **8/10** ✓
+| ID | Agente | Descrição |
+|----|--------|-----------|
+| PROPOSTA-DOC-1 | Doctor | Biblioteca de títulos IST (20+ padrões verificados) |
+| PROPOSTA-DOC-2 | Doctor | Template de abstract IST-padrão (5 frases) |
+| PROPOSTA-HACK-1 | Hacker | Pre-commit security stack para projectos EIC IST |
+| PROPOSTA-HACK-2 | Hacker | OWASP Top 10 2025 cheatsheet Python |
+| PROPOSTA-RID-1 | Rider | Guia de selecção de framework multi-agent 2026 |
+| PROPOSTA-RID-2 | Rider | DAG de dissertação Doctor ↔ Rider |
 
 ---
 
@@ -57,7 +53,8 @@
 | 2026-05-30 manhã | Manhã | NLP Transformers / LLMs (EuroLLM, RLHF) | — | 9 |
 | 2026-05-30 noite | Noite | Federated Learning + Privacy-Preserving ML | **Hacker** | 9 |
 | 2026-05-30 noite (ciclo) | **Night 2** | Papers de Ponta 2025 — Top 10 ML/DL/AI | Doctor | — |
+| **2026-05-31 manhã** | **Manhã** | **NLP Clínico + Conversational AI PE (IST/INESC-ID)** | **Doctor, Hacker, Rider** | **6** |
 
 ---
 
-*Relatório completo: `training_reports/night_2.md`*
+*Relatório anterior: `training_reports/night_2.md`*
