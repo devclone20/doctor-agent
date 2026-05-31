@@ -153,3 +153,152 @@ Igual ao short paper mas com secções mais desenvolvidas e possível apêndice.
 - Turnitin (usado pelo IST)
 - iThenticate
 - Grammarly (também detecção básica)
+
+---
+
+## Rubrica IEEE de Avaliação de Abstracts (Night 3 — 2026-05-31)
+
+Derivada de auto-avaliação com paper fictício FedAdaGrad (Federated Learning).
+Testada e refinada em sessão de treino. Score mínimo IEEE: **8.0/10**.
+
+### Os 4 Elementos Obrigatórios — Verificação Explícita
+
+| # | Elemento | Frases | Critério de qualidade | Erro mais comum |
+|---|----------|--------|----------------------|-----------------|
+| 1 | **Problema/Contexto** | 1-2 | Problem claro + escala/impacto com número | "increasingly important" sem estatística |
+| 2 | **Abordagem/Método** | 2-3 | Sistema nomeado + mecanismo chave identificado | Over-detail (deixar para Introduction) |
+| 3 | **Resultados** | 1-2 | Benchmarks + métricas concretas + condição experimental | "competitive performance" sem número |
+| 4 | **Impacto/Conclusão** | 1 | O que o campo pode agora fazer que antes não podia | **Ausente** — sacrificado para dar mais espaço a resultados |
+
+**Checklist antes de finalizar qualquer abstract:**
+- [ ] Elemento 1 presente com número de contexto ou citação de escala?
+- [ ] Sistema/método tem nome próprio (searchable)?
+- [ ] Resultados incluem: dataset(s), baseline, número(s), condição?
+- [ ] **Elemento 4 presente?** (Verificação explícita — omissão mais frequente)
+- [ ] Sem citações no abstract?
+- [ ] Contagem de palavras dentro do limite do venue?
+
+### Pesos para score ponderado:
+
+```
+Score = 0.20 × Problema + 0.25 × Método + 0.25 × Resultados + 0.20 × Impacto + 0.10 × Língua
+```
+
+Score < 7.5 → não submeter. Score 7.5–8.5 → revisar elementos fracos. Score > 8.5 → pronto.
+
+---
+
+## Regras de Melhoria — Padrões Fracos Identificados (Night 3)
+
+### Regra 1 — O Impacto Nunca É Opcional
+O quarto elemento (impacto/conclusão) é o mais frequentemente omitido e o mais valioso.
+Aumentou o score do abstract de treino em +1.2 pontos com uma única frase.
+
+**Fórmula:** "These results demonstrate that [X] is [a viable / the most effective] approach to [Y] for [domain]."
+
+**Variações aceites:**
+- "Our findings suggest that [technique] can reduce [cost] while preserving [quality] in [setting]."
+- "FedAdaGrad demonstrates that importance-guided adaptive compression is a viable path toward production-ready federated systems for resource-constrained mobile environments."
+
+### Regra 2 — Contexto com Escala Quantificada
+**❌ Errado:** "FL faces challenges at scale"  
+**✓ Correcto:** "FL deployments at production scale involve 10^6+ heterogeneous devices [X], where each training round transmits hundreds of megabytes per client [Y]."
+
+### Regra 3 — Resultados Sem Hedging
+**❌ Errado:** "matching or exceeding FedAvg accuracy"  
+**✓ Correcto:** "exceeds FedAvg by 1.8 pp under 30% client dropout; matches FedAvg under full participation"
+
+Quando o resultado é condicional, dar a condição, não hedging.
+
+### Regra 4 — Léxico de Clichés Proibidos em Related Work
+
+| Frase proibida | Substituição |
+|----------------|--------------|
+| "a rich body of research" | descrever estrutura: "three classes of compression: sparsification, quantisation, sketching" |
+| "substantial attention" | "motivated X, Y, and Z [refs]" |
+| "a growing body of work" | citar os papers directamente |
+| "principled approach" | mecanismo específico: "importance-guided adaptive compression" |
+| "it is clear that" | remover — nunca é "clear" |
+| "we can see from" | "Figure X shows" |
+
+### Regra 5 — Transições entre Grupos de Related Work
+Cada transição entre grupos necessita de uma frase de ligação explícita que explique a relevância do próximo grupo.
+
+**Padrão de transição:**  
+"While [grupo anterior] addresses [problema A], [grupo seguinte] tackles [problema B], which remains unaddressed in [contexto]."
+
+**Exemplo correcto:**  
+"While the above approaches handle statistical heterogeneity, they leave the communication policy fixed across all clients, motivating work on per-client adaptive compression."
+
+**Transição abrupt (❌):** Mudar de tema sem ligação → reviewer pergunta "porquê este grupo?"
+
+### Regra 6 — Gap Statement Accionável
+
+**❌ Genérico:** "Adaptive compression has not been systematically explored."
+
+**✓ Específico (contraste duplo):**  
+"Unlike prior *compression* approaches that apply static per-round budgets, and unlike *heterogeneity-handling* methods that leave communication policies unchanged, [proposed work] co-designs [X] and [Y] to simultaneously [objective 1] and [objective 2]."
+
+O gap deve ser descrito em termos do que o seu trabalho faz que nenhum trabalho anterior faz, não apenas o que não existe.
+
+---
+
+## Estrutura Óptima de Related Work — Template de 5 Grupos
+
+Identificada como superior ao template de 3 grupos (Night 3):
+
+```
+1. FOUNDATIONS
+   Trabalho seminal + baseline. Uma limitação fundamental que motiva a área.
+   Tipicamente 2-3 papers fundacionais.
+
+2. ABORDAGEM A (e.g., Compressão)
+   O que fazem, como funciona (específico), limitação partilhada.
+   Citar 3-5 papers; terminar com: "A critical limitation shared by all X approaches is..."
+
+3. ABORDAGEM B (e.g., Heterogeneidade)
+   O que fazem, como funciona, limitação.
+   [Transição explícita desde grupo anterior]
+   Citar 3-5 papers.
+
+4. ABORDAGEM C (e.g., Adaptação/Personalização)
+   [Transição explícita] Porque é que este grupo é relevante para o trabalho.
+   Limitação: "These approaches address X but leave Y unchanged."
+
+5. POSICIONAMENTO (secção própria ou último parágrafo)
+   Contraste com grupos anteriores: "Unlike A, and unlike B, o nosso trabalho..."
+   "To the best of our knowledge, this is the first..."
+   Nunca misturar com grupo 4.
+```
+
+### Verificação de qualidade de Related Work
+
+| Critério | Indicador | Score mín. |
+|----------|-----------|------------|
+| Estrutura | 4-5 grupos temáticos com progressão lógica | 8/10 |
+| Rigor científico | Sistemas nomeados, venues correctas, limitações específicas | 7.5/10 |
+| Citações | Verificadas (fase 2) antes de submissão | 9/10 |
+| Linguagem | Sem clichés; transições explícitas; contraste activo | 7.5/10 |
+
+---
+
+## Verificação de Citações em Duas Fases
+
+Protocolo identificado em Night 3 para garantir integridade de referências:
+
+### Fase 1 — Rascunho (estrutura suficiente)
+- Nome do sistema + autores principais
+- Venue provável + ano provável
+- Contribuição principal
+- Marcação: ⚠️ (a confirmar)
+
+### Fase 2 — Submissão (completo e verificado)
+- DOI confirmado
+- Volume, número, páginas exactas
+- Nome correcto do venue (conferência/journal, não abreviação genérica)
+- Verificação em: Semantic Scholar, CrossRef, ACM DL, IEEE Xplore
+- Marcação: ✅
+
+**Regra absoluta:** Nunca apresentar uma referência Fase 1 como final num documento para submissão ou entrega académica.
+
+*Fonte: Night 3 training (2026-05-31)*
