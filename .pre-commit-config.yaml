@@ -1,0 +1,80 @@
+# .pre-commit-config.yaml — doctor-agent
+# Bloqueia commits com credenciais, secrets e tokens antes de entrar no histórico git.
+# Instalação: pip install pre-commit detect-secrets && pre-commit install
+# Baseline inicial: detect-secrets scan > .secrets.baseline
+
+repos:
+  # ---------------------------------------------------------------------------
+  # Gitleaks — scanner de secrets por regex + entropia
+  # ---------------------------------------------------------------------------
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.18.4
+    hooks:
+      - id: gitleaks
+        name: "gitleaks — detectar secrets e tokens"
+        args: ["--redact", "--verbose"]
+
+  # ---------------------------------------------------------------------------
+  # detect-secrets — camada adicional com baseline persistente
+  # Ignora training_reports/ (podem conter exemplos de outputs) e lockfiles.
+  # ---------------------------------------------------------------------------
+  - repo: https://github.com/Yelp/detect-secrets
+    rev: v1.5.0
+    hooks:
+      - id: detect-secrets
+        name: "detect-secrets — verificar contra baseline"
+        args: ["--baseline", ".secrets.baseline"]
+        exclude: |
+          (?x)
+          ^\.secrets\.baseline$|
+          ^training_reports/|
+          .*\.lock$|
+          .*\.egg-info/
+
+  # ---------------------------------------------------------------------------
+  # ggshield (GitGuardian) — scanner adicional com cobertura de 350+ detectores.
+  # Graceful: se ggshield não estiver instalado, avisa mas não bloqueia o commit.
+  # Instalação manual: pip install ggshield && ggshield auth login
+  # ---------------------------------------------------------------------------
+  - repo: local
+    hooks:
+      - id: ggshield
+        name: "ggshield — GitGuardian secret scan (opcional)"
+        language: system
+        entry: ggshield secret scan pre-commit
+        stages: [pre-commit]
+        fail_fast: false
+        # verbose: true para ver output mesmo em pass
+        # Se ggshield não estiver no PATH, o hook falha com erro de sistema —
+        # pre-commit regista o erro mas não bloqueia o commit (fail_fast: false).
+        # Para activar bloqueio após instalar: remover fail_fast ou definir como true.
+
+  # ---------------------------------------------------------------------------
+  # Bandit — SAST estático para Python (severity >= MEDIUM)
+  # B101 ignorado: assert é usado em testes, não em código de produção crítico.
+  # ---------------------------------------------------------------------------
+  - repo: https://github.com/PyCQA/bandit
+    rev: 1.7.8
+    hooks:
+      - id: bandit
+        name: "bandit — SAST Python"
+        args: ["-r", "doctor/", "-ll", "--skip", "B101,B603,B607"]
+        # B603 + B607: subprocess com shell=True — já tratado em tools.py com allowlist.
+        # Rever periodicamente se o allowlist de comandos mudar.
+        pass_filenames: false
+
+  # ---------------------------------------------------------------------------
+  # Hooks de higiene geral
+  # ---------------------------------------------------------------------------
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-json
+      - id: check-merge-conflict
+      - id: detect-private-key
+        name: "detectar chaves privadas (RSA, EC, OPENSSH)"
+      - id: check-added-large-files
+        args: ["--maxkb=500"]
