@@ -222,6 +222,29 @@ TOOL_DEFINITIONS = [
         },
     },
     {
+        "name": "cite_from_title",
+        "description": (
+            "Gera citação IEEE, APA e BibTeX a partir do título de um artigo, "
+            "pesquisando automaticamente na CrossRef. Usar quando se tem o título "
+            "mas não o DOI, e se precisa da citação correcta."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "title": {
+                    "type": "string",
+                    "description": "Título do artigo (em inglês para melhores resultados). Ex: 'Attention Is All You Need'",
+                },
+                "citation_style": {
+                    "type": "string",
+                    "enum": ["ieee", "apa", "bibtex", "all"],
+                    "description": "Estilo de citação (default: 'all' — retorna todos)",
+                },
+            },
+            "required": ["title"],
+        },
+    },
+    {
         "name": "run_command",
         "description": (
             "Executa um comando no terminal — para compilar LaTeX, verificar ficheiros, "
@@ -288,6 +311,8 @@ def execute_tool(tool_name: str, tool_input: dict, db_path: Path) -> str:
             return _save_learning(tool_input, db_path)
         elif tool_name == "search_web":
             return _search_web(tool_input)
+        elif tool_name == "cite_from_title":
+            return _cite_from_title(tool_input)
         elif tool_name == "run_command":
             return _run_command(tool_input)
         else:
@@ -495,6 +520,29 @@ def _save_learning(inp: dict, db_path: Path) -> str:
     slug = "learned_" + hashlib.md5(title.encode()).hexdigest()[:8]
     upsert_wiki_page(db_path, slug, title, content, tags=tags)
     return f"Conhecimento guardado: '{title}' (slug: {slug})"
+
+
+def _cite_from_title(inp: dict) -> str:
+    from doctor.core.academic_search import cite_from_title
+    title = inp.get("title", "")
+    style = inp.get("citation_style", "all")
+    paper = cite_from_title(title, style=style)
+    if not paper:
+        return f"Artigo não encontrado para o título: {title}"
+    lines = [
+        f"Título: {paper.get('title')}",
+        f"Autores: {paper.get('authors')}",
+        f"Ano: {paper.get('year')} | Venue: {paper.get('venue')}",
+        f"DOI: {paper.get('doi')}",
+        "",
+    ]
+    if style in ("ieee", "all"):
+        lines.append(f"IEEE: {paper.get('citation_ieee')}")
+    if style in ("apa", "all"):
+        lines.append(f"APA: {paper.get('citation_apa')}")
+    if style in ("bibtex", "all"):
+        lines.append(f"\nBibTeX:\n{paper.get('bibtex')}")
+    return "\n".join(lines)
 
 
 def _search_web(inp: dict) -> str:

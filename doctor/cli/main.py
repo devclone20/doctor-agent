@@ -136,6 +136,8 @@ def write(
     language: str = typer.Option("pt", "--lang", "-l", help="Idioma: pt ou en"),
     output: str = typer.Option(None, "--output", "-o", help="Ficheiro de saída"),
     project: str = typer.Option(None, "--project", "-p"),
+    output_format: str = typer.Option("markdown", "--output-format", "-f", help="Formato de output: markdown ou latex"),
+    style: str = typer.Option("", "--style", help="Estilo especial: ist-dissertation"),
 ) -> None:
     """
     Escreve uma dissertação completa ou secção específica.
@@ -143,6 +145,8 @@ def write(
     Exemplos:
       doctor write "Federated Learning para detecção de anomalias IoT" --type msc
       doctor write "Transformer architectures" --type article --section introduction --lang en
+      doctor write "Redes Neuronais para Visão" --type msc --output-format latex
+      doctor write "Federated Learning IoT" --type msc --style ist-dissertation
     """
     from doctor.skills.dissertation import get_dissertation_prompt, get_section_prompt
 
@@ -150,6 +154,12 @@ def write(
     type_names = {"msc": "Dissertação de Mestrado", "phd": "Tese de Doutoramento",
                   "bsc": "Licenciatura", "article": "Artigo Científico"}
     type_name = type_names.get(doc_type, doc_type)
+
+    if output_format not in ("markdown", "latex"):
+        console.print("[doctor.error]--output-format deve ser 'markdown' ou 'latex'[/doctor.error]")
+        raise typer.Exit(1)
+
+    ist_style_active = style == "ist-dissertation"
 
     spec_content = ""
     if spec and Path(spec).exists():
@@ -160,7 +170,19 @@ def write(
         prompt = get_section_prompt(section, topic, context=spec_content, doc_type=doc_type)
     else:
         console.print(f"[doctor.dim]Escrevendo {type_name} completa: {topic}[/doctor.dim]\n")
-        prompt = get_dissertation_prompt(doc_type, topic, spec=spec_content, language=language)
+        prompt = get_dissertation_prompt(
+            doc_type,
+            topic,
+            spec=spec_content,
+            language=language,
+            output_format=output_format,
+            ist_style=ist_style_active,
+        )
+
+    if output_format == "latex" and not section:
+        # Para LaTeX completo, pedir ao agente que exporte directamente em LaTeX
+        from doctor.skills.dissertation import get_latex_export_prompt
+        prompt = get_latex_export_prompt(prompt, doc_type=doc_type)
 
     agent = _get_agent(project=project or topic[:40], doc_type=doc_type)
     agent.initialize()
@@ -170,26 +192,66 @@ def write(
 
     target = section or type_name
     console.print(Panel(
-        Markdown(response),
+        Markdown(response) if output_format == "markdown" else Text(response[:3000]),
         title=f"[doctor.name]{target} — {topic[:50]}[/doctor.name]",
         border_style="blue",
         expand=False,
     ))
 
+    # Determinar extensão e nome do ficheiro
+    ext = ".tex" if output_format == "latex" else ".md"
     if output:
-        Path(output).write_text(response, encoding="utf-8")
-        console.print(f"[doctor.success]Guardado em: {output}[/doctor.success]")
+        out_path = Path(output)
+        if output_format == "latex" and not output.endswith(".tex"):
+            out_path = Path(output).with_suffix(".tex")
+        out_path.write_text(response, encoding="utf-8")
+        console.print(f"[doctor.success]Guardado em: {out_path}[/doctor.success]")
     else:
-        # Auto-save em ~/doctor-work/
         work_dir = Path(os.path.expanduser("~/doctor-work"))
         work_dir.mkdir(exist_ok=True)
         safe_topic = "".join(c for c in topic[:40] if c.isalnum() or c in " -_").strip().replace(" ", "_")
-        fname = f"{safe_topic}_{doc_type}_{section or 'full'}.md"
+        fname = f"{safe_topic}_{doc_type}_{section or 'full'}{ext}"
         out_path = work_dir / fname
         out_path.write_text(response, encoding="utf-8")
         console.print(f"[doctor.dim]Auto-guardado em: {out_path}[/doctor.dim]")
 
     agent.end_session()
+
+
+@app.command()
+def template(
+    doc_type: str = typer.Option("msc", "--type", "-t", help="Tipo: msc, phd, bsc"),
+    output: str = typer.Option(None, "--output", "-o", help="Ficheiro onde guardar o template"),
+) -> None:
+    """
+    Imprime ou guarda o template IST-DEI com todas as secções obrigatórias.
+
+    Exemplos:
+      doctor template --type msc
+      doctor template --type msc --output template.md
+      doctor template --type phd --output phd_template.md
+    """
+    from doctor.skills.dissertation import get_ist_dei_template
+
+    console.print(BANNER)
+    console.print(f"[doctor.dim]Template IST-DEI — {doc_type.upper()}[/doctor.dim]\n")
+
+    content = get_ist_dei_template(doc_type=doc_type)
+
+    if output:
+        Path(output).write_text(content, encoding="utf-8")
+        console.print(f"[doctor.success]Template guardado em: {output}[/doctor.success]")
+    else:
+        work_dir = Path(os.path.expanduser("~/doctor-work"))
+        work_dir.mkdir(exist_ok=True)
+        out_path = work_dir / f"template_ist_dei_{doc_type}.md"
+        out_path.write_text(content, encoding="utf-8")
+        console.print(Panel(
+            Markdown(content[:4000] + "\n\n*[...template truncado para visualização — ficheiro completo guardado]*"),
+            title=f"[doctor.name]Template IST-DEI — {doc_type.upper()}[/doctor.name]",
+            border_style="blue",
+        ))
+        console.print(f"[doctor.dim]Template completo em: {out_path}[/doctor.dim]")
 
 
 @app.command()

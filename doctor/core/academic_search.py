@@ -520,6 +520,56 @@ def search_pubmed(query: str, limit: int = 10) -> list[dict]:
     return results
 
 
+# ─── CrossRef title search ───────────────────────────────────────────────────
+
+def cite_from_title(title: str, style: str = "all") -> dict | None:
+    """
+    Encontra e formata citação a partir de um título, usando CrossRef title search.
+    Retorna paper dict com citation_ieee, citation_apa, bibtex — ou None se não encontrado.
+    """
+    try:
+        with httpx.Client(timeout=15.0) as client:
+            resp = client.get(
+                "https://api.crossref.org/works",
+                params={
+                    "query.title": title,
+                    "rows": 3,
+                    "select": "DOI,title,author,published,container-title,volume,issue,page,type",
+                },
+                headers={"User-Agent": "DoctorAgent/1.0 (mailto:doctor@ist.pt)"},
+            )
+            if resp.status_code != 200:
+                return None
+            items = resp.json().get("message", {}).get("items", [])
+    except Exception:
+        return None
+
+    if not items:
+        return None
+
+    # Escolher o resultado cujo título mais se assemelha ao pedido
+    query_lower = title.lower().strip()
+    best = None
+    best_score = -1
+    for item in items:
+        candidate_titles = item.get("title", [])
+        if not candidate_titles:
+            continue
+        candidate = candidate_titles[0].lower().strip()
+        # Score simples: número de palavras comuns
+        query_words = set(query_lower.split())
+        candidate_words = set(candidate.split())
+        score = len(query_words & candidate_words)
+        if score > best_score:
+            best_score = score
+            best = item
+
+    if not best:
+        return None
+
+    return lookup_doi(best.get("DOI", ""))
+
+
 # ─── Interface principal ──────────────────────────────────────────────────────
 
 def search_academic(

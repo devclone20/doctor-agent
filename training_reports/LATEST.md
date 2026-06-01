@@ -1,16 +1,24 @@
 # Último Treino: 2026-06-01 05:00 UTC
 
+<<<<<<< Updated upstream
 **Sessão:** Manhã  
 **Agentes:** Doctor | Hacker | Rider  
 **Papers IST Scholar:** 2 (EIC — Engenharia Informática e de Computadores)  
 **Repos GitHub pesquisados:** 10  
 **Propostas:** 3  
+=======
+**Sessão:** Manhã
+**Agentes:** Doctor | Hacker | Rider
+**Repos GitHub pesquisados:** 10
+**Propostas aprovadas e implementadas:** 17
+>>>>>>> Stashed changes
 **Relatório completo:** training_reports/2026-06-01_05h.md
 
 ---
 
 **Temas desta sessão:** Federated Learning Privacy + Kubernetes Orchestration
 
+<<<<<<< Updated upstream
 **Destaques:**
 - IST Scholar bloqueado (403) — papers obtidos via web search com afiliação IST/INESC-ID
 - Gitleaks (25,900★) em transição — monitorizar fork Betterleaks
@@ -59,3 +67,21 @@
 ---
 
 *Sessão anterior: training_reports/2026-05-31_19h.md*
+=======
+**Implementações aplicadas:**
+- CrossRef API — citações automáticas por título (`cite_from_title` tool)
+- Exportação LaTeX + modo `--style ist-dissertation` com normas IST completas
+- Template IST-DEI completo + comando `doctor template`
+- `latex_export.py` — skill de conversão Markdown→LaTeX IST
+- `.pre-commit-config.yaml` — Gitleaks + detect-secrets + ggshield + Bandit
+- `.github/workflows/security.yml` — pip-audit + Semgrep + Gitleaks em CI
+- `security/semgrep_rules.yaml` — 8 regras customizadas para o Doctor
+- `security/supply_chain_checklist.md` — checklist AI supply chain
+- `security/owasp_nettacker_guide.md` — guia IST/EIC
+- `doctor/core/project_state.py` — state machine explícita (6 estados, transições validadas)
+- `doctor/core/section_dag.py` — DAG de secções com Kahn's algorithm
+- `doctor/core/budget.py` — budget enforcement por agente
+- `doctor/core/swarm_patterns.md` — 4 padrões de coordenação multi-agente
+- `doctor/orchestration/langgraph_spike.md` — avaliação LangGraph vs Claude SDK
+- `doctor/orchestration/adk_vs_claude_sdk.md` — guia de selecção Google ADK vs Claude SDK
+>>>>>>> Stashed changes
