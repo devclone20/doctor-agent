@@ -2403,6 +2403,111 @@ def add_tracked_deletion(paragraph, old_text: str, author: str = "Doctor AI"):
 
 ---
 
+## Modos de Operação
+
+O Doctor suporta flags de estilo que activam configurações completas de formatação,
+estrutura e output. Usar como prefixo no pedido: `--style ist-dissertation "escreve o cap. 3"`.
+
+---
+
+### `--style ist-dissertation`
+
+Activa o modo de dissertação de Mestrado IST. Tudo segue o padrão oficial IST-UL.
+
+**Estrutura de capítulos obrigatória:**
+```
+Capa → Página de Rosto → Agradecimentos → Resumo (PT) → Abstract (EN)
+→ Índice Geral → Índice de Figuras → Índice de Tabelas → Lista de Acrónimos
+→ Cap. 1 Introdução → Cap. 2 Background/Estado da Arte
+→ Cap. 3 Abordagem/Metodologia → Cap. 4 Implementação
+→ Cap. 5 Avaliação/Resultados → Cap. 6 Conclusão
+→ Referências Bibliográficas → Apêndices
+```
+
+**Tipografia:**
+- Fonte corpo: Arial 10pt (Word) / Times New Roman 12pt (LaTeX) — consultar orientador
+- Espaçamento: 1.5 linhas
+- Margens: 2.5 cm todos os lados
+- Numeração de páginas: romanas para pré-texto (i, ii, iii…), árabes para capítulos (1, 2, 3…)
+
+**Logótipos IST obrigatórios:**
+- Capa: logótipo IST (ist_logo.pdf) — disponível em https://tecnico.ulisboa.pt/en/media/
+- Página de rosto: logótipo IST + Universidade de Lisboa
+- Nunca usar logótipos de terceiros na capa sem autorização do orientador
+
+**Citações:**
+- Formato: IEEE (inline `[1]`, `[2, 3]`, `[4]–[7]`)
+- Verificação obrigatória via CrossRef DOI API antes de incluir qualquer referência
+- BibTeX gerado para cada referência verificada
+
+**Output gerado:**
+- `.docx` via python-docx (entregue imediatamente, pronto a abrir)
+- `.tex` via template IST v5.0 LuaLaTeX (quando solicitado ou por defeito para dissertações)
+- `references.bib` com todas as referências em BibTeX
+
+**Template detalhado:** ver `doctor/knowledge/wiki/templates/ist_dissertation_template.md`
+
+---
+
+### `--style ieee-paper`
+
+Activa o modo de artigo para conferências e journals IEEE.
+
+**Estrutura obrigatória (double-column, 4–8 páginas):**
+```
+Title → Authors + Affiliations → Abstract (150–250 palavras) → Keywords (4–6)
+→ I. Introduction → II. Related Work → III. Methodology/System Design
+→ IV. Evaluation → V. Conclusion → References
+```
+
+**Tipografia:**
+- Formato: IEEE two-column (template oficial `IEEEtran.cls`)
+- Fonte: Times New Roman 10pt (corpo), 8pt (captions, footnotes)
+- Abstract: itálico, single-column no topo
+- Section titles: small caps numerados com algarismos romanos
+
+**Citações:**
+- IEEE numeric inline: `[1]`, `[2]`
+- Lista de referências no fim, numerada, sem secção separada de BibTeX no output
+
+**Output gerado:**
+- `.tex` compilável com `pdflatex` ou `lualatex` (template IEEEtran)
+- `.pdf` final (quando `lualatex` disponível no ambiente)
+
+**Venues target:** IEEE Transactions, IEEE Conference Proceedings (ICASSP, ICSOC, INFOCOM, etc.)
+
+---
+
+### `--style acm-paper`
+
+Activa o modo de artigo para conferências e journals ACM.
+
+**Estrutura obrigatória (single ou double-column conforme venue, 10–12 páginas):**
+```
+Title → Authors → Abstract → CCS Concepts → Keywords
+→ 1. Introduction → 2. Background → 3. Design → 4. Implementation
+→ 5. Evaluation → 6. Related Work → 7. Conclusion → References
+```
+
+**Tipografia:**
+- Formato: ACM SIGPLAN / ACM Art (template `acmart.cls`)
+- Fonte: Linux Libertine / TeX Gyre Termes (via `acmart` package)
+- CCS Concepts obrigatório (https://dl.acm.org/ccs)
+- Número de palavras na abstract: 150–200
+
+**Citações:**
+- ACM SIGCHI style (author-year) para algumas venues: `[Smith et al. 2023]`
+- ACM numeric para outras: `[42]`
+- Verificar o style guide da venue específica
+
+**Output gerado:**
+- `.tex` compilável com o template `acmart.cls`
+- `.pdf` final
+
+**Venues target:** ACM SOSP, EuroSys, ASPLOS, CCS, SIGCOMM, CHI, UIST, VLDB
+
+---
+
 ## Regras absolutas
 
 1. **Texto sempre a preto** — sem cor em nenhum elemento (títulos, legendas, referências, pseudocódigo). Destaque = negrito ou itálico. Só muda por ordem explícita do utilizador.
