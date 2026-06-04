@@ -578,6 +578,381 @@ Output: [...]
 """
 
 
+def get_meic_ist_2024_template(topic: str = "") -> str:
+    """
+    Retorna o template estrutural completo para dissertações MEIC IST 2024.
+
+    Baseado na estrutura real dos papers MEIC IST 2024 (dissertações de mestrado
+    em Engenharia Informática e de Computadores do Instituto Superior Técnico).
+    Campos marcados [MEIC-IST-2024] são obrigatórios segundo as normas do programa.
+
+    topic: tema da dissertação (pré-preenche campos relevantes)
+    """
+    topic_line = f"**{topic}**" if topic else "**[MEIC-IST-2024: Título da Dissertação]**"
+
+    return f"""# Template MEIC IST 2024 — Dissertação de Mestrado
+# Mestrado Integrado em Engenharia Informática e de Computadores
+
+> Gerado por Doctor Agent · Instituto Superior Técnico, Universidade de Lisboa
+> Departamento de Engenharia Informática (DEI) · Normas MEIC 2024
+> Mínimo: 40 referências IEEE · Abstract EN+PT ≤ 250 palavras · 5–8 keywords EN
+
+---
+
+## CAPA [MEIC-IST-2024: obrigatório]
+
+**[Logótipo IST — canto superior esquerdo]**
+
+{topic_line}
+*[Subtítulo opcional]*
+
+**[MEIC-IST-2024: Nome completo do Autor]**
+
+Dissertação para obtenção do Grau de Mestre em
+**Engenharia Informática e de Computadores**
+
+**Júri [MEIC-IST-2024: obrigatório]**
+- Presidente: Prof. Dr. [Nome], [Instituição]
+- Orientador: Prof. Dr. [Nome], IST, Universidade de Lisboa
+- Vogal: Prof. Dr. [Nome], [Instituição]
+
+**Orientador:** Prof. Dr. [MEIC-IST-2024: Nome do Orientador], IST
+**Co-orientador:** Prof. Dr. [Nome do Co-orientador] *(se aplicável)*
+
+[MEIC-IST-2024: Mês] [MEIC-IST-2024: Ano]
+
+---
+
+## ACKNOWLEDGEMENTS [MEIC-IST-2024: em inglês para dissertações EN]
+
+*(Opcional — máx. 1 página)*
+
+[Text of acknowledgements. Dissertações submetidas em inglês devem ter os
+agradecimentos também em inglês. Dissertações em português: "Agradecimentos".]
+
+---
+
+## RESUMO [MEIC-IST-2024: obrigatório — máx. 250 palavras]
+
+[Contextualização e motivação do problema. Abordagem e metodologia proposta.
+Resultados principais com métricas quando possível. Conclusão e impacto.]
+
+**Palavras-chave [MEIC-IST-2024: 5–8 em português]:**
+palavra1, palavra2, palavra3, palavra4, palavra5
+
+---
+
+## ABSTRACT [MEIC-IST-2024: obrigatório — máx. 250 words]
+
+[Context and motivation. Proposed approach and methodology.
+Main results with quantitative metrics. Conclusion and contribution.]
+
+**Keywords [MEIC-IST-2024: 5–8 in English]:**
+keyword1, keyword2, keyword3, keyword4, keyword5
+
+---
+
+## TABLE OF CONTENTS
+
+*(Gerado automaticamente — `\\tableofcontents` em LaTeX)*
+
+---
+
+## LIST OF FIGURES
+
+*(Gerado automaticamente — `\\listoffigures` em LaTeX)*
+
+---
+
+## LIST OF TABLES
+
+*(Gerado automaticamente — `\\listoftables` em LaTeX)*
+
+---
+
+## LIST OF ABBREVIATIONS
+
+*(Se aplicável)*
+
+| Abbreviation | Meaning |
+|-------------|---------|
+| IST  | Instituto Superior Técnico |
+| MEIC | Mestrado Integrado em Engenharia Informática e de Computadores |
+| ML   | Machine Learning |
+
+---
+
+# 1. INTRODUCTION [MEIC-IST-2024: obrigatório]
+
+## 1.1 Motivation
+
+[Contextualização ampla do domínio. Porque é que este problema é relevante agora?
+Que tendências actuais — industriais, científicas, sociais — o tornam urgente?
+Impacto real se resolvido. 1–2 parágrafos de abertura fortes.]
+
+## 1.2 Problem Statement
+
+[Definição precisa e formal do problema. O que exactamente se quer resolver?
+Porque é que é difícil? Que limitações têm as abordagens actuais?
+O que ainda não existe que este trabalho vai criar?]
+
+## 1.3 Proposed Approach
+
+[Overview de alto nível da solução proposta — sem detalhes técnicos (esse é o cap. 4).
+Intuição, arquitectura geral, insight principal.]
+
+## 1.4 Contributions [MEIC-IST-2024: lista explícita obrigatória]
+
+The main contributions of this work are:
+
+- **[C1]** [Contribuição 1 — específica, verificável, diferenciadora]
+- **[C2]** [Contribuição 2 — específica, verificável, diferenciadora]
+- **[C3]** [Contribuição 3 — específica, verificável, diferenciadora]
+
+## 1.5 Dissertation Structure
+
+The remainder of this dissertation is organized as follows.
+Chapter 2 introduces the necessary background concepts.
+Chapter 3 reviews and positions related work.
+Chapter 4 presents the proposed [system/method/architecture].
+Chapter 5 evaluates the approach experimentally.
+Chapter 6 concludes and discusses future work.
+
+---
+
+# 2. BACKGROUND [MEIC-IST-2024: análise crítica, não apenas survey]
+
+## 2.1 [Fundamental Concept 1]
+
+### 2.1.1 [Sub-concept]
+
+[Explicação com citações [N]. Fórmulas LaTeX quando relevante: $f(x) = \\sigma(Wx + b)$.]
+
+### 2.1.2 [Sub-concept]
+
+[...]
+
+## 2.2 [Fundamental Concept 2]
+
+[...]
+
+## 2.3 [Fundamental Concept 3]
+
+[...]
+
+## 2.4 Chapter Summary
+
+[Síntese dos conceitos cobertos e como preparam o leitor para o capítulo seguinte.]
+
+---
+
+# 3. RELATED WORK [MEIC-IST-2024: tabela comparativa obrigatória]
+
+## 3.1 [Approach Family 1]
+
+[Análise crítica dos trabalhos desta categoria — não lista, mas argumento.
+O que funciona bem? Onde falham? Como se relacionam com esta proposta?]
+
+## 3.2 [Approach Family 2]
+
+[...]
+
+## 3.3 [Approach Family 3]
+
+[...]
+
+## 3.4 Comparison Table [MEIC-IST-2024: obrigatória]
+
+| Work | Venue | Method | Metric A | Metric B | Key Limitation |
+|------|-------|--------|----------|----------|----------------|
+| [1]  | ...   | ...    | ...      | ...      | ...            |
+| [2]  | ...   | ...    | ...      | ...      | ...            |
+| **This work** | — | ... | **XX.X** | **XX.X** | — |
+
+## 3.5 Positioning
+
+[Como este trabalho se diferencia de cada família. Por que as limitações identificadas
+justificam a abordagem proposta. Ligação directa às contribuições do cap. 1.]
+
+---
+
+# 4. [SYSTEM/METHOD NAME] — ARCHITECTURE [MEIC-IST-2024: cap. central]
+
+## 4.1 Overview
+
+[Descrição de alto nível com referência à figura de arquitectura.]
+
+**Figure 4.1:** [MEIC-IST-2024: Arquitectura geral do sistema proposto.]
+*(Criar figura — diagrama de blocos com fluxo de dados e componentes principais)*
+
+## 4.2 [Component 1]
+
+[Descrição detalhada. Justificação das escolhas de design vs. alternativas.
+Trade-offs explícitos. Equações quando necessário (eq. numeradas).]
+
+$$f(x) = \\text{{[MEIC-IST-2024: equação do componente]}}  \\tag{{4.1}}$$
+
+## 4.3 [Component 2]
+
+[...]
+
+## 4.4 [Component 3]
+
+[...]
+
+## 4.5 Algorithm
+
+```
+Algorithm 1: [MEIC-IST-2024: Nome do Algoritmo Principal]
+Input:  [inputs com tipos]
+Output: [outputs com tipos]
+ 1: [Passo 1]
+ 2: [Passo 2]
+ 3: for each [item] in [collection] do
+ 4:   [operação]
+ 5: end for
+ 6: return [resultado]
+```
+
+**Complexity:** Time $O(\\text{...})$, Space $O(\\text{...})$.
+
+## 4.6 Implementation Details
+
+**Stack:**
+
+| Component  | Technology | Version | Rationale |
+|-----------|------------|---------|-----------|
+| Language   | Python     | 3.11    | [justificação] |
+| Framework  | ...        | ...     | [justificação] |
+
+**Environment:** [CPU/GPU, RAM, OS, principais dependências]
+
+---
+
+# 5. EVALUATION [MEIC-IST-2024: RQs explícitas, setup completo, ablation]
+
+## 5.1 Research Questions [MEIC-IST-2024: obrigatório]
+
+- **RQ1:** [Questão 1 — focada, verificável]
+- **RQ2:** [Questão 2 — focada, verificável]
+- **RQ3:** [Questão 3 — focada, verificável]
+
+## 5.2 Experimental Setup
+
+### 5.2.1 Datasets
+
+| Dataset | Size | Domain | Split (train/val/test) |
+|---------|------|--------|------------------------|
+| [DS1]   | ...  | ...    | .../.../.../          |
+
+### 5.2.2 Baselines
+
+| Baseline | Reference | Rationale for inclusion |
+|---------|-----------|------------------------|
+| [B1]    | [N]       | [por que é o SOTA relevante] |
+
+### 5.2.3 Evaluation Metrics
+
+[Definição formal de cada métrica. Equações quando relevante. Justificação da escolha.]
+
+### 5.2.4 Hardware & Reproducibility
+
+**Hardware:** [CPU/GPU, RAM]
+**Random seeds:** [valores para reprodutibilidade]
+**Code:** [link para repositório / instruções]
+
+## 5.3 Results
+
+### 5.3.1 RQ1 — [Título da questão]
+
+| Method       | Metric A ↑ | Metric B ↑ | Metric C ↓ |
+|-------------|-----------|-----------|-----------|
+| Baseline 1   | XX.X ± X.X | XX.X ± X.X | XX.X ± X.X |
+| Baseline 2   | XX.X ± X.X | XX.X ± X.X | XX.X ± X.X |
+| **Proposed** | **XX.X ± X.X** | **XX.X ± X.X** | **XX.X ± X.X** |
+
+[MEIC-IST-2024: DADOS REAIS NECESSÁRIOS — substituir XX.X pelos resultados experimentais]
+
+### 5.3.2 RQ2 — [Título da questão]
+
+[...]
+
+### 5.3.3 RQ3 — [Título da questão]
+
+[...]
+
+## 5.4 Ablation Study [MEIC-IST-2024: obrigatório para dissertações com componentes múltiplos]
+
+| Variant            | Metric A ↑ | Delta vs. Full |
+|-------------------|-----------|----------------|
+| Full model         | XX.X      | —              |
+| w/o [Component 1]  | XX.X      | -X.X           |
+| w/o [Component 2]  | XX.X      | -X.X           |
+
+## 5.5 Analysis and Discussion
+
+[Interpretação dos resultados. Resposta directa a cada RQ com evidência.
+Casos de sucesso e casos de falha. Análise de erros. Limitações visíveis nos dados.]
+
+---
+
+# 6. CONCLUSION [MEIC-IST-2024: obrigatório]
+
+## 6.1 Summary of Contributions
+
+[Em retrospectiva — o que foi efectivamente construído, avaliado e provado.
+Ligar de volta às contribuições declaradas no cap. 1.]
+
+## 6.2 Answers to Research Questions
+
+- **RQ1:** [Resposta directa com evidência dos resultados]
+- **RQ2:** [Resposta directa com evidência dos resultados]
+- **RQ3:** [Resposta directa com evidência dos resultados]
+
+## 6.3 Limitations
+
+[Limitações honestas do trabalho. O que não está coberto. O que foi assumido.
+Condições de validade dos resultados.]
+
+## 6.4 Future Work
+
+- **[FW1]:** [Direcção específica e accionável — não "melhorar o sistema"]
+- **[FW2]:** [Direcção específica e accionável]
+- **[FW3]:** [Direcção específica e accionável]
+
+## 6.5 Final Remarks
+
+[Impacto esperado. Contribuição para a comunidade. Posicionamento no panorama actual.]
+
+---
+
+# REFERENCES [MEIC-IST-2024: mínimo 40 referências, formato IEEE]
+
+*(Numeradas por ordem de aparecimento no texto — IEEE style)*
+
+[1] [Autor(es)], "[Título]," *[Venue — journal ou proceedings]*, vol. X, no. Y, pp. Z–W, [Ano]. doi: [DOI].
+
+[2] ...
+
+*[MEIC-IST-2024: mínimo 40 referências. Preferencialmente: 60% conference/journal papers,
+20% books/theses, 20% technical reports/preprints. Verificar com `doctor cite --doi ...`]*
+
+---
+
+# APPENDICES *(Opcional)*
+
+## Appendix A — [Title]
+
+[Conteúdo adicional: provas, código, datasets detalhados, tabelas extensas —
+material que suporta reprodutibilidade mas não cabe no corpo principal.]
+
+---
+
+*Template MEIC IST 2024 gerado por Doctor Agent*
+*Normas: DEI/IST, Universidade de Lisboa — MEIC 2024*
+"""
+
+
 def get_abstract_evaluation(abstract: str) -> str:
     """Gera prompt para avaliar um abstract."""
     return f"""Avalia este abstract de acordo com os padrões IST e IEEE:

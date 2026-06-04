@@ -220,7 +220,8 @@ def write(
 
 @app.command()
 def template(
-    doc_type: str = typer.Option("msc", "--type", "-t", help="Tipo: msc, phd, bsc"),
+    doc_type: str = typer.Option("msc", "--type", "-t", help="Tipo: msc, phd, bsc, meic-2024"),
+    topic: str = typer.Option("", "--topic", help="Tema (usado pelo template meic-2024)"),
     output: str = typer.Option(None, "--output", "-o", help="Ficheiro onde guardar o template"),
 ) -> None:
     """
@@ -230,13 +231,23 @@ def template(
       doctor template --type msc
       doctor template --type msc --output template.md
       doctor template --type phd --output phd_template.md
+      doctor template --type meic-2024 --output template_meic.md
+      doctor template --type meic-2024 --topic "Quantização não-linear para ML"
     """
-    from doctor.skills.dissertation import get_ist_dei_template
-
     console.print(BANNER)
-    console.print(f"[doctor.dim]Template IST-DEI — {doc_type.upper()}[/doctor.dim]\n")
 
-    content = get_ist_dei_template(doc_type=doc_type)
+    if doc_type == "meic-2024":
+        from doctor.skills.dissertation import get_meic_ist_2024_template
+        console.print("[doctor.dim]Template MEIC IST 2024[/doctor.dim]\n")
+        content = get_meic_ist_2024_template(topic=topic)
+        default_filename = "template_meic_ist_2024.md"
+        title_label = "Template MEIC IST 2024"
+    else:
+        from doctor.skills.dissertation import get_ist_dei_template
+        console.print(f"[doctor.dim]Template IST-DEI — {doc_type.upper()}[/doctor.dim]\n")
+        content = get_ist_dei_template(doc_type=doc_type)
+        default_filename = f"template_ist_dei_{doc_type}.md"
+        title_label = f"Template IST-DEI — {doc_type.upper()}"
 
     if output:
         Path(output).write_text(content, encoding="utf-8")
@@ -244,11 +255,11 @@ def template(
     else:
         work_dir = Path(os.path.expanduser("~/doctor-work"))
         work_dir.mkdir(exist_ok=True)
-        out_path = work_dir / f"template_ist_dei_{doc_type}.md"
+        out_path = work_dir / default_filename
         out_path.write_text(content, encoding="utf-8")
         console.print(Panel(
             Markdown(content[:4000] + "\n\n*[...template truncado para visualização — ficheiro completo guardado]*"),
-            title=f"[doctor.name]Template IST-DEI — {doc_type.upper()}[/doctor.name]",
+            title=f"[doctor.name]{title_label}[/doctor.name]",
             border_style="blue",
         ))
         console.print(f"[doctor.dim]Template completo em: {out_path}[/doctor.dim]")
@@ -557,7 +568,7 @@ def plan(
       doctor plan "Transformer architectures" --type phd --budget 150000
       doctor plan "Redes Neuronais" --type msc --no-dry-run
     """
-    from doctor.orchestration.dissertation_orchestrator import DissertationOrchestrator
+    from doctor.orchestration.langgraph_interface import create_orchestrator
 
     console.print(BANNER)
 
@@ -569,7 +580,8 @@ def plan(
     project_dir = Path(os.path.expanduser("~/doctor-work")) / topic[:40].replace(" ", "_")
     project_dir.mkdir(parents=True, exist_ok=True)
 
-    orchestrator = DissertationOrchestrator(
+    orchestrator = create_orchestrator(
+        backend="stdlib",
         topic=topic,
         doc_type=doc_type,
         project_dir=project_dir,

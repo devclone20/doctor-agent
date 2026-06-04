@@ -245,6 +245,39 @@ TOOL_DEFINITIONS = [
         },
     },
     {
+        "name": "manage_bibliography",
+        "description": (
+            "Gere o ficheiro BibTeX persistente da dissertação (~/.doctor-work/bibliography.bib). "
+            "Permite adicionar referências por DOI ou título, listar chaves existentes, "
+            "e exportar o ficheiro .bib completo. "
+            "Usar para construir e manter a lista de referências de forma incremental."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "action": {
+                    "type": "string",
+                    "enum": ["add_doi", "add_title", "list", "export_bib"],
+                    "description": (
+                        "'add_doi' — adicionar referência por DOI; "
+                        "'add_title' — adicionar referência por título do artigo; "
+                        "'list' — listar todas as chaves BibTeX actuais; "
+                        "'export_bib' — retornar conteúdo completo do ficheiro .bib"
+                    ),
+                },
+                "doi": {
+                    "type": "string",
+                    "description": "DOI do artigo. Obrigatório para action='add_doi'. Ex: '10.1145/3295500.3356196'",
+                },
+                "title": {
+                    "type": "string",
+                    "description": "Título do artigo. Obrigatório para action='add_title'. Ex: 'Attention Is All You Need'",
+                },
+            },
+            "required": ["action"],
+        },
+    },
+    {
         "name": "sanitize_document",
         "description": (
             "Sanitiza metadata sensível de um documento .docx gerado pelo Doctor: "
@@ -366,6 +399,8 @@ def execute_tool(tool_name: str, tool_input: dict, db_path: Path) -> str:
             return _search_web(tool_input)
         elif tool_name == "cite_from_title":
             return _cite_from_title(tool_input)
+        elif tool_name == "manage_bibliography":
+            return _manage_bibliography(tool_input)
         elif tool_name == "sanitize_document":
             return _sanitize_document(tool_input)
         elif tool_name == "verify_citations":
@@ -626,6 +661,52 @@ def _search_web(inp: dict) -> str:
         return "\n".join(lines)
     except Exception as e:
         return f"Erro na pesquisa web: {e}"
+
+
+def _manage_bibliography(inp: dict) -> str:
+    from doctor.skills.bibliography_manager import BibliographyManager
+
+    action = inp.get("action", "")
+    bib_path = Path(os.path.expanduser("~/doctor-work/bibliography.bib"))
+    bm = BibliographyManager(bib_path)
+
+    if action == "add_doi":
+        doi = inp.get("doi", "").strip()
+        if not doi:
+            return "Erro: 'doi' é obrigatório para action='add_doi'."
+        try:
+            key = bm.add_from_doi(doi)
+            bm.save()
+            return f"Referência adicionada com chave BibTeX: {key}\nFicheiro actualizado: {bib_path}"
+        except ValueError as exc:
+            return f"Erro: {exc}"
+
+    elif action == "add_title":
+        title = inp.get("title", "").strip()
+        if not title:
+            return "Erro: 'title' é obrigatório para action='add_title'."
+        try:
+            key = bm.add_from_title(title)
+            bm.save()
+            return f"Referência adicionada com chave BibTeX: {key}\nFicheiro actualizado: {bib_path}"
+        except ValueError as exc:
+            return f"Erro: {exc}"
+
+    elif action == "list":
+        keys = bm.get_all_keys()
+        if not keys:
+            return f"Nenhuma referência em {bib_path}."
+        header = f"{len(keys)} referências em {bib_path}:\n"
+        return header + "\n".join(f"  \\cite{{{k}}}" for k in keys)
+
+    elif action == "export_bib":
+        content = bm.export_bib()
+        if len(content.splitlines()) <= 4:
+            return f"Ficheiro .bib vazio ou sem entradas: {bib_path}"
+        return content
+
+    else:
+        return f"Action desconhecida: {action!r}. Valores válidos: add_doi, add_title, list, export_bib."
 
 
 def _sanitize_document(inp: dict) -> str:

@@ -147,3 +147,40 @@ jobs:
           name: gitleaks-report
           path: gitleaks-report.json
           retention-days: 30
+
+      # Relatório consolidado: combina Gitleaks + pip-audit num único Markdown.
+      # Requer que o artefacto pip-audit-report.json esteja acessível no runner.
+      # O job download-artifact corre dentro do mesmo runner onde os ficheiros
+      # foram gerados pelos steps anteriores — pip-audit-report.json pode não
+      # existir neste job, por isso descarregamos o artefacto explicitamente.
+      - name: Download pip-audit report para relatório consolidado
+        uses: actions/download-artifact@v4
+        if: always()
+        with:
+          name: pip-audit-report
+          path: .
+        continue-on-error: true
+
+      - name: Setup Python para relatório consolidado
+        uses: actions/setup-python@v5
+        if: always()
+        with:
+          python-version: '3.11'
+
+      - name: Gerar relatório de segurança consolidado
+        if: always()
+        run: |
+          python security/generate_security_report.py \
+            --gitleaks gitleaks-report.json \
+            --pip-audit pip-audit-report.json \
+            --output security-report.md
+          echo "--- Security Report Preview ---"
+          head -40 security-report.md
+
+      - name: Upload relatório consolidado
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: security-report
+          path: security-report.md
+          retention-days: 30
