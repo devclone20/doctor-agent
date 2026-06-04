@@ -245,6 +245,59 @@ TOOL_DEFINITIONS = [
         },
     },
     {
+        "name": "sanitize_document",
+        "description": (
+            "Sanitiza metadata sensível de um documento .docx gerado pelo Doctor: "
+            "remove autor, last_modified_by, empresa, comentários e track changes residuais. "
+            "Usar após gerar qualquer documento Word antes de entregar ao utilizador."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "path": {
+                    "type": "string",
+                    "description": "Caminho do ficheiro .docx a sanitizar.",
+                },
+            },
+            "required": ["path"],
+        },
+    },
+    {
+        "name": "verify_citations",
+        "description": (
+            "Verifica citações académicas contra CrossRef, OpenAlex e Semantic Scholar. "
+            "Detecta alucinações: títulos inexistentes, anos errados, autores discrepantes. "
+            "Usar sempre antes de finalizar uma lista de referências bibliográficas."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "citations": {
+                    "type": "array",
+                    "items": {
+                        "oneOf": [
+                            {"type": "string"},
+                            {
+                                "type": "object",
+                                "properties": {
+                                    "title": {"type": "string"},
+                                    "authors": {"type": "string"},
+                                    "year": {"type": "integer"},
+                                },
+                                "required": ["title"],
+                            },
+                        ]
+                    },
+                    "description": (
+                        "Lista de citações a verificar. Cada elemento pode ser uma string "
+                        "(título) ou um objecto com 'title', 'authors' (opcional) e 'year' (opcional)."
+                    ),
+                },
+            },
+            "required": ["citations"],
+        },
+    },
+    {
         "name": "run_command",
         "description": (
             "Executa um comando no terminal — para compilar LaTeX, verificar ficheiros, "
@@ -313,6 +366,10 @@ def execute_tool(tool_name: str, tool_input: dict, db_path: Path) -> str:
             return _search_web(tool_input)
         elif tool_name == "cite_from_title":
             return _cite_from_title(tool_input)
+        elif tool_name == "sanitize_document":
+            return _sanitize_document(tool_input)
+        elif tool_name == "verify_citations":
+            return _verify_citations(tool_input)
         elif tool_name == "run_command":
             return _run_command(tool_input)
         else:
@@ -569,6 +626,34 @@ def _search_web(inp: dict) -> str:
         return "\n".join(lines)
     except Exception as e:
         return f"Erro na pesquisa web: {e}"
+
+
+def _sanitize_document(inp: dict) -> str:
+    from doctor.skills.docx_sanitizer import sanitize_docx_metadata
+    path_str = inp.get("path", "")
+    path = Path(path_str)
+
+    work_dir = Path(os.path.expanduser("~/doctor-work"))
+    if not path.is_absolute():
+        path = work_dir / path_str
+
+    try:
+        report = sanitize_docx_metadata(path)
+        lines = [f"Documento sanitizado: {path.name}"]
+        for key, val in report.items():
+            lines.append(f"  {key}: {val}")
+        return "\n".join(lines)
+    except Exception as e:
+        return f"Erro ao sanitizar documento: {e}"
+
+
+def _verify_citations(inp: dict) -> str:
+    from doctor.core.citation_pipeline import batch_verify_citations, citation_hallucination_report
+    citations = inp.get("citations", [])
+    if not citations:
+        return "Nenhuma citacao fornecida."
+    results = batch_verify_citations(citations)
+    return citation_hallucination_report(results)
 
 
 def _run_command(inp: dict) -> str:

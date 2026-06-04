@@ -1,0 +1,66 @@
+# pip-audit configuration — doctor-agent
+# Referência: https://github.com/pypa/pip-audit
+#
+# Uso:
+#   pip-audit --config security/pip_audit_config.toml
+#   pip-audit -r requirements.lock.txt --config security/pip_audit_config.toml
+
+[tool.pip-audit]
+
+# Formato de output por default para uso local (columns = tabela legível)
+# Em CI, passar --output=json explicitamente para artefactos estruturados
+output = "columns"
+
+# Threshold de severidade: bloquear apenas HIGH e CRITICAL
+# MEDIUM e LOW são registados mas não bloqueiam o pipeline
+# Alterar para "medium" se se quiser zero-tolerance
+vulnerability-severity-threshold = "high"
+
+# Índice PyPI oficial — nunca usar índices privados sem verificação
+# index-url = "https://pypi.org/simple"
+
+# Aliases a ignorar (skip list) com justificação obrigatória
+# Formato: ID do CVE/GHSA e razão documentada
+# REGRA: qualquer skip deve ser revisto trimestralmente e removido quando corrigido
+
+[tool.pip-audit.skip]
+# Exemplo de uso (descomentar e adaptar quando necessário):
+#
+# GHSA-xxxx-xxxx-xxxx = "False positive: afecta apenas o endpoint X que não usamos. Revisto 2026-06-01."
+# CVE-2024-XXXXX = "Dependência transitiva de scholarly. Aguardar fix em scholarly>=1.8.0. Prazo: 2026-09-01."
+#
+# REGRA DE OURO: Se não tens uma justificação técnica específica,
+# NÃO adicionar ao skip — corrigir a vulnerabilidade.
+
+# ---------------------------------------------------------------------------
+# Notas de operação
+# ---------------------------------------------------------------------------
+#
+# Instalar pip-audit (dev dependency):
+#   pip install -e ".[dev]"
+#
+# Auditoria local (directa):
+#   pip-audit --config security/pip_audit_config.toml
+#
+# Auditoria com lockfile (mais precisa — recomendada):
+#   pip-audit -r requirements.lock.txt --config security/pip_audit_config.toml
+#
+# Gerar lockfile com hashes (necessário para --require-hashes):
+#   pip install pip-tools
+#   pip-compile pyproject.toml --generate-hashes --output-file requirements.lock.txt
+#
+# Modo --fix (apenas em branches não-main — ver security.yml):
+#   pip-audit --fix --config security/pip_audit_config.toml
+#   # Isto actualiza requirements.txt/pyproject.toml para a versão corrigida mais próxima.
+#   # Verificar sempre o diff antes de commitar o fix automático.
+#
+# Integração CI:
+#   Ver .github/workflows/security.yml — job dependency-audit
+#   O --fix automático corre apenas em branches != main para evitar
+#   actualizações não revistas em produção.
+#
+# Severidades pip-audit:
+#   critical  — CVSS >= 9.0 — bloquear imediatamente
+#   high      — CVSS 7.0–8.9 — bloquear (threshold configurado acima)
+#   medium    — CVSS 4.0–6.9 — registar, rever na próxima sprint
+#   low       — CVSS < 4.0   — registar, backlog

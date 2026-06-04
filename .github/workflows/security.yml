@@ -1,0 +1,149 @@
+name: Security Audit
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    # Segunda-feira 06:00 UTC — auditoria semanal de dependências
+    - cron: '0 6 * * 1'
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # Job 1: pip-audit — CVEs em dependências directas e transitivas
+  # ---------------------------------------------------------------------------
+  dependency-audit:
+    name: pip-audit (dependências Python)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Instalar pip-audit
+        run: pip install pip-audit
+
+      - name: Auditar pyproject.toml
+        run: |
+          pip-audit \
+            --requirement <(pip install . --dry-run --quiet 2>&1 | grep -v "^WARNING" || true) \
+            --output=json \
+            --output-file pip-audit-report.json \
+            || pip-audit --output=columns
+
+      # Fallback: auditar directamente o ambiente instalado
+      - name: Auditar ambiente instalado (fallback)
+        if: failure()
+        run: |
+          pip install -e ".[dev]" 2>/dev/null || pip install -e .
+          pip-audit --output=columns
+
+      # --fix automático: apenas em branches != main para evitar actualizações
+      # não revistas a entrar directamente em produção.
+      # O step cria um requirements.fix.txt com as versões corrigidas sugeridas.
+      - name: pip-audit --fix (sugestoes — branches nao-main)
+        if: github.ref != 'refs/heads/main'
+        run: |
+          pip install -e ".[dev]" 2>/dev/null || pip install -e .
+          pip-audit --fix --dry-run --output=json > pip-audit-fix-suggestions.json 2>&1 || true
+          echo "--- Fix suggestions (dry-run) ---"
+          cat pip-audit-fix-suggestions.json 2>/dev/null || echo "Sem sugestoes de fix ou erro no dry-run."
+
+      - name: Upload relatório pip-audit
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pip-audit-report
+          path: |
+            pip-audit-report.json
+            pip-audit-fix-suggestions.json
+          retention-days: 30
+
+  # ---------------------------------------------------------------------------
+  # Job 2: Semgrep SAST — p/python + p/secrets + regras customizadas doctor
+  # ---------------------------------------------------------------------------
+  semgrep:
+    name: Semgrep SAST
+    runs-on: ubuntu-latest
+    container:
+      image: semgrep/semgrep:latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Semgrep scan — rulesets standard
+        run: |
+          semgrep scan \
+            --config p/python \
+            --config p/secrets \
+            --config p/owasp-top-ten \
+            --json \
+            --output semgrep-report.json \
+            . || true
+
+      - name: Semgrep scan — regras customizadas doctor
+        run: |
+          if [ -f security/semgrep_rules.yaml ]; then
+            semgrep scan \
+              --config security/semgrep_rules.yaml \
+              --json \
+              --output semgrep-custom-report.json \
+              . || true
+          fi
+
+      - name: Semgrep scan — falhar em severity ERROR
+        run: |
+          semgrep scan \
+            --config p/python \
+            --config p/secrets \
+            --config p/owasp-top-ten \
+            --error \
+            .
+
+      - name: Upload relatórios Semgrep
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: semgrep-reports
+          path: |
+            semgrep-report.json
+            semgrep-custom-report.json
+          retention-days: 30
+
+  # ---------------------------------------------------------------------------
+  # Job 3: Gitleaks — secrets no histórico git e no diff do PR
+  # ---------------------------------------------------------------------------
+  gitleaks:
+    name: Gitleaks (secrets scan)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # fetch-depth: 0 para escanear histórico completo, não apenas o último commit
+          fetch-depth: 0
+
+      - name: Instalar Gitleaks
+        run: |
+          curl -sSL https://github.com/gitleaks/gitleaks/releases/download/v8.18.4/gitleaks_8.18.4_linux_x64.tar.gz \
+            | tar -xz gitleaks
+          sudo mv gitleaks /usr/local/bin/gitleaks
+
+      - name: Gitleaks — scan do histórico completo
+        run: |
+          gitleaks detect \
+            --source . \
+            --log-level warn \
+            --redact \
+            --report-format json \
+            --report-path gitleaks-report.json
+
+      - name: Upload relatório Gitleaks
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: gitleaks-report
+          path: gitleaks-report.json
+          retention-days: 30

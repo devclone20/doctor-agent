@@ -541,6 +541,89 @@ def memory(
     console.print()
 
 
+@app.command()
+def plan(
+    topic: str = typer.Argument(..., help="Tema da dissertação"),
+    doc_type: str = typer.Option("msc", "--type", "-t", help="Tipo: msc, phd, bsc, article"),
+    budget: int = typer.Option(100_000, "--budget", "-b", help="Budget de tokens para toda a dissertação"),
+    dry_run: bool = typer.Option(True, "--dry-run/--no-dry-run", help="Apenas mostrar plano (default) ou simular execução"),
+    output: str = typer.Option(None, "--output", "-o", help="Guardar estado do plano em JSON"),
+) -> None:
+    """
+    Mostra o plano de geração de uma dissertação: ordem de secções, dependências e budget estimado.
+
+    Exemplos:
+      doctor plan "Federated Learning para detecção de anomalias IoT" --type msc
+      doctor plan "Transformer architectures" --type phd --budget 150000
+      doctor plan "Redes Neuronais" --type msc --no-dry-run
+    """
+    from doctor.orchestration.dissertation_orchestrator import DissertationOrchestrator
+
+    console.print(BANNER)
+
+    valid_types = {"bsc", "msc", "phd", "article"}
+    if doc_type not in valid_types:
+        console.print(f"[doctor.error]--type deve ser um de: {sorted(valid_types)}[/doctor.error]")
+        raise typer.Exit(1)
+
+    project_dir = Path(os.path.expanduser("~/doctor-work")) / topic[:40].replace(" ", "_")
+    project_dir.mkdir(parents=True, exist_ok=True)
+
+    orchestrator = DissertationOrchestrator(
+        topic=topic,
+        doc_type=doc_type,
+        project_dir=project_dir,
+        budget_tokens=budget,
+    )
+    tasks = orchestrator.build_plan()
+
+    type_names = {"msc": "Dissertação de Mestrado", "phd": "Tese de Doutoramento",
+                  "bsc": "Licenciatura", "article": "Artigo Científico"}
+    type_name = type_names.get(doc_type, doc_type)
+
+    console.print(f"[doctor.academic]Plano de Geração — {type_name}[/doctor.academic]")
+    console.print(f"[doctor.dim]Tema: {topic}[/doctor.dim]\n")
+
+    from rich.table import Table
+
+    table = Table(title=f"Ordem de Geração — {doc_type.upper()}", border_style="blue")
+    table.add_column("#", style="dim", width=4)
+    table.add_column("Secção", style="cyan", min_width=25)
+    table.add_column("Tokens Est.", justify="right", style="yellow")
+    table.add_column("Tempo Est.", justify="right", style="dim")
+    table.add_column("Dependências", style="dim")
+
+    total_tokens = 0
+    for i, task in enumerate(tasks, start=1):
+        est_tokens = task.estimated_tokens()
+        total_tokens += est_tokens
+        # Rough time estimate: 1 000 tokens/s (streaming generation)
+        est_seconds = est_tokens / 1_000
+        time_str = f"~{est_seconds:.0f}s"
+        deps = ", ".join(task.dependencies) if task.dependencies else "—"
+        table.add_row(str(i), task.section, f"{est_tokens:,}", time_str, deps)
+
+    console.print(table)
+
+    budget_pct = total_tokens / budget * 100
+    console.print(
+        f"\n[doctor.dim]Total estimado:[/doctor.dim] [yellow]{total_tokens:,}[/yellow] tokens  "
+        f"([{'doctor.success' if budget_pct <= 80 else 'doctor.error'}]{budget_pct:.0f}%[/{'doctor.success' if budget_pct <= 80 else 'doctor.error'}] do budget de {budget:,})"
+    )
+    est_total_min = total_tokens / 1_000 / 60
+    console.print(f"[doctor.dim]Tempo total estimado:[/doctor.dim] ~{est_total_min:.1f} minutos (sequencial)\n")
+
+    if output:
+        orchestrator.save_state(Path(output))
+        console.print(f"[doctor.success]Estado do plano guardado em: {output}[/doctor.success]")
+
+    if not dry_run:
+        console.print("[doctor.dim]A simular execução...[/doctor.dim]\n")
+        from doctor.orchestration.dissertation_orchestrator import orchestrate_dissertation
+        report = orchestrate_dissertation(topic, doc_type, project_dir, dry_run=False)
+        console.print(Panel(report, title="[doctor.name]Relatório de Progresso[/doctor.name]", border_style="blue"))
+
+
 def main() -> None:
     app()
 
