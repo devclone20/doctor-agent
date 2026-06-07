@@ -953,6 +953,184 @@ material que suporta reprodutibilidade mas não cabe no corpo principal.]
 """
 
 
+def get_eic_abstract_template(topic: str = "", doc_type: str = "msc") -> str:
+    """
+    Retorna o template de abstract padrão EIC IST, baseado nos 3 papers INESC-ID/IST
+    validados em sessão: da Silva 2024 (GenAI IS), Coimbra et al. (Graph DBs), Matos 2024 (NLP Pain).
+
+    Estrutura IEEE obrigatória: [CONTEXTO] → [PROBLEMA] → [MÉTODO] → [RESULTADO] → [IMPACTO]
+
+    doc_type: "msc" | "phd" | "bsc"
+    topic: tema da dissertação (pré-preenche campos relevantes)
+    """
+    type_labels = {"msc": "Dissertação de Mestrado", "phd": "Tese de Doutoramento", "bsc": "Trabalho de Licenciatura"}
+    type_label = type_labels.get(doc_type, "Dissertação de Mestrado")
+    topic_hint = f" sobre **{topic}**" if topic else ""
+
+    return f"""# Template Abstract EIC IST — {type_label}
+
+> Padrão INESC-ID/IST · Normas IEEE + Regulamento IST 2026
+> Baseado em papers validados: da Silva 2024 (INESC-ID), Coimbra et al. (INESC-ID), Matos 2024 (NAACL)
+
+---
+
+## RESUMO (Português){topic_hint}
+
+*(Máx. 250 palavras · 5–8 palavras-chave)*
+
+<!-- [CONTEXTO] Situa o leitor no domínio e justifica a relevância do problema.
+     Padrão INESC-ID: 1–2 frases de abertura fortes. Sem jargão não definido. -->
+[CONTEXTO] [Nome do domínio] tem ganho crescente relevância em [área], impulsionado por [tendência/motivação real].
+Contudo, [lacuna ou limitação das abordagens actuais] permanece um desafio em aberto.
+
+<!-- [PROBLEMA] Define com precisão o que este trabalho resolve. -->
+[PROBLEMA] Este trabalho aborda [descrição precisa do problema], que [porque é difícil/importante].
+
+<!-- [MÉTODO] Descreve a abordagem — sem spoilers de resultados. -->
+[MÉTODO] Propõe-se [nome do método/sistema/abordagem], que [como funciona em alto nível].
+A avaliação foi conduzida sobre [dataset/benchmark] utilizando [métricas principais].
+
+<!-- [RESULTADO] Métricas concretas. Nunca "bons resultados" — valores reais. -->
+[RESULTADO] Os resultados demonstram [métrica A: XX.X%], superando [baseline] em [delta].
+[DADOS REAIS NECESSÁRIOS: substituir XX.X pelos resultados experimentais finais]
+
+<!-- [IMPACTO] Conclusão e contribuição para a área. -->
+[IMPACTO] Este trabalho contribui com [contribuição principal], com aplicabilidade em [domínio de impacto].
+
+**Palavras-chave:** [kw1], [kw2], [kw3], [kw4], [kw5]
+
+<!-- Exemplos de keywords EIC IST: machine learning, deep learning, natural language processing,
+     distributed systems, graph databases, information retrieval, security, cloud computing,
+     federated learning, large language models, knowledge graphs, software engineering -->
+
+---
+
+## ABSTRACT (English)
+
+*(Max. 250 words · 5–8 keywords)*
+
+<!-- Mirror da estrutura PT — mesmas 5 partes, mesma precisão. -->
+[CONTEXT] [Domain] has emerged as a critical area in [field], driven by [trend/motivation].
+However, [gap in current approaches] remains an open challenge.
+
+[PROBLEM] This work addresses [precise problem description], which [why it is hard/important].
+
+[METHOD] We propose [method/system name], which [high-level how it works].
+Evaluation was performed on [dataset/benchmark] using [main metrics].
+
+[RESULT] Results show [metric A: XX.X%], outperforming [baseline] by [delta].
+[REAL DATA NEEDED: replace XX.X with final experimental results]
+
+[IMPACT] This work contributes [main contribution], with applicability to [impact domain].
+
+**Keywords:** [kw1], [kw2], [kw3], [kw4], [kw5]
+
+---
+
+## NOTA — AI Disclosure (aidisclose) [IST 2026 OBRIGATÓRIO]
+
+A partir de 2026, o IST exige declaração explícita de uso de IA generativa na elaboração
+de dissertações. Adicionar na secção de Declarações (antes do Resumo):
+
+> "Na elaboração desta dissertação, foi utilizada assistência de ferramentas de inteligência
+> artificial generativa para [finalidade específica: revisão de escrita / geração de código /
+> pesquisa bibliográfica]. Todo o conteúdo foi verificado e é da responsabilidade do autor."
+
+Se não foi usado: declarar explicitamente a não utilização.
+Referência: Despacho IST n.º [VERIFICAR número oficial 2026] — Regulamento de Uso de IA.
+
+---
+
+## CHECKLIST INLINE
+
+Antes de submeter, verificar:
+- [ ] [CONTEXTO] presente e situa o domínio em ≤2 frases
+- [ ] [PROBLEMA] definido com precisão — não "estudar X", mas "resolver Y em contexto Z"
+- [ ] [MÉTODO] descreve a abordagem sem revelar resultados prematuramente
+- [ ] [RESULTADO] inclui métricas concretas (não "bons resultados" ou "melhoria significativa")
+- [ ] [IMPACTO] declara contribuição e domínio de aplicabilidade
+- [ ] PT ≤ 250 palavras (contar com ferramenta — não a olho)
+- [ ] EN ≤ 250 words
+- [ ] 5–8 keywords em PT e EN (não repetir as mesmas palavras do título)
+- [ ] Keywords em inglês no Abstract (padrão INESC-ID/IST)
+- [ ] aidisclose preenchido (IST 2026)
+- [ ] Nenhum claim sem suporte nos resultados
+"""
+
+
+def get_abstract_checklist() -> str:
+    """
+    Checklist de validação de abstract IST EIC com os critérios exactos usados
+    pelos revisores IST, derivada das normas DEI e padrão papers INESC-ID 2024-2026.
+    """
+    return """# Checklist de Validação de Abstract — IST EIC
+
+> Critérios usados pelos júris IST/INESC-ID na revisão de dissertações.
+> Baseada em: normas DEI IST, padrão papers INESC-ID 2024-2026, IEEE Author Guidelines.
+
+---
+
+## 1. ESTRUTURA (obrigatória — IEEE 4 elementos)
+
+- [ ] **Contexto/Motivação** — O abstract abre com enquadramento do domínio e relevância do problema?
+      Critério: leitor não especialista compreende PORQUE o problema importa.
+- [ ] **Problema** — O problema específico está definido com precisão cirúrgica?
+      Critério: não "estudar X", mas "resolver Y sob constrangimento Z com limitação W".
+- [ ] **Método** — A abordagem proposta está descrita sem jargão opaco?
+      Critério: leitor consegue reproduzir a ideia central sem ler o resto.
+- [ ] **Resultado** — Há métricas concretas com valores numéricos?
+      Critério: REPROVAÇÃO AUTOMÁTICA se "resultados promissores" ou "melhoria significativa" sem números.
+
+## 2. LIMITES DE TAMANHO
+
+- [ ] Resumo PT: ≤ 250 palavras (contagem exacta, não estimativa)
+- [ ] Abstract EN: ≤ 250 words
+- [ ] Keywords PT: 5–8 termos
+- [ ] Keywords EN: 5–8 terms (não tradução directa obrigatória — usar termos canónicos da área)
+
+## 3. QUALIDADE LINGUÍSTICA
+
+- [ ] Sem frases passivas desnecessárias ("it was found that" → "results show")
+- [ ] Sem hedging excessivo ("may", "could", "might" em resultados verificados)
+- [ ] Sem acrónimos não definidos (primeira ocorrência: "Machine Learning (ML)")
+- [ ] Tempo verbal consistente: presente para factos gerais, passado para trabalho realizado
+- [ ] Sem referências bibliográficas no abstract (padrão IEEE — proibido)
+- [ ] Sem equações ou figuras no abstract
+
+## 4. KEYWORDS
+
+- [ ] Keywords não repetem palavras do título (adds information retrieval value)
+- [ ] Incluem termos específicos da área (não apenas genéricos como "AI" ou "computer science")
+- [ ] Exemplos EIC IST válidos: machine learning, deep learning, NLP, distributed systems,
+      graph databases, federated learning, LLM, knowledge graphs, software verification,
+      cloud computing, cybersecurity, computer vision, reinforcement learning
+
+## 5. POSICIONAMENTO
+
+- [ ] O abstract deixa claro o que é NOVO vs. trabalho anterior?
+- [ ] A contribuição é atribuída a este trabalho especificamente?
+- [ ] O abstract é auto-contido (lê-se sem o resto da dissertação)?
+
+## 6. IST 2026 — REQUISITOS ADICIONAIS
+
+- [ ] aidisclose: declaração de uso (ou não) de IA generativa presente na dissertação
+- [ ] Orientador reviu e aprovou o abstract antes da submissão final
+- [ ] Versão PT e EN são consistentes em conteúdo (não mera tradução — adaptação cultural)
+
+## ESCALA DE AVALIAÇÃO
+
+| Score | Critério |
+|-------|----------|
+| APROVADO | Todos os itens obrigatórios (1–4) satisfeitos |
+| REVISÃO MENOR | ≤2 itens de linguagem ou keywords em falta |
+| REVISÃO MAIOR | Estrutura IEEE incompleta ou limites excedidos |
+| REPROVADO | Sem métricas concretas OU >250 palavras OU estrutura ausente |
+
+---
+*Checklist gerada por Doctor Agent · Padrão IST EIC 2024-2026*
+"""
+
+
 def get_abstract_evaluation(abstract: str) -> str:
     """Gera prompt para avaliar um abstract."""
     return f"""Avalia este abstract de acordo com os padrões IST e IEEE:
