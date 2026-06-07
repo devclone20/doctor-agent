@@ -28,8 +28,20 @@ def load_wiki_into_db(db_path: Path) -> None:
             ).fetchall()
         }
 
-    for md_file in wiki_dir.glob("*.md"):
-        slug = md_file.stem
+    # Glob top-level wiki .md files AND all files under subdirectories (roadmaps, etc.)
+    all_md_files = list(wiki_dir.glob("*.md")) + list(wiki_dir.glob("**/*.md"))
+    # Deduplicate while preserving order (top-level files are already in rglob results)
+    seen: set[Path] = set()
+    unique_md_files: list[Path] = []
+    for f in all_md_files:
+        if f not in seen:
+            seen.add(f)
+            unique_md_files.append(f)
+
+    for md_file in unique_md_files:
+        # Build a slug that encodes the relative path so subdir files don't collide
+        relative = md_file.relative_to(wiki_dir)
+        slug = str(relative.with_suffix("")).replace("/", "__").replace("\\", "__")
         mtime = str(md_file.stat().st_mtime)
 
         if slug in existing and existing[slug] == mtime:
