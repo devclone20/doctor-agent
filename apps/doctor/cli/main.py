@@ -7,6 +7,7 @@ import os
 import sys
 from pathlib import Path
 
+import anthropic
 import typer
 from dotenv import load_dotenv
 from rich.console import Console
@@ -16,7 +17,10 @@ from rich.prompt import Prompt
 from rich.text import Text
 from rich.theme import Theme
 
+# Carrega o .env do próprio agente — funciona de qualquer pasta (chat no terminal).
+# Primeiro o .env do cwd (se existir, permite override local), depois o do projecto.
 load_dotenv()
+load_dotenv(Path(__file__).resolve().parent.parent.parent.parent / ".env")
 
 app = typer.Typer(
     name="doctor",
@@ -112,7 +116,12 @@ def chat(
                 chunks.append(text)
                 console.print(text, end="", markup=False, highlight=False)
 
-            agent.chat_stream(user_input, callback=on_chunk)
+            try:
+                agent.chat_stream(user_input, callback=on_chunk)
+            except anthropic.APIError as e:
+                msg = getattr(e, "message", None) or str(e)
+                console.print(f"\n[doctor.error]Erro da API Anthropic:[/doctor.error] {msg}")
+                console.print("[doctor.dim]Verifica o saldo e a API key em console.anthropic.com. Escreve 'exit' para sair.[/doctor.dim]")
             console.print("\n")
 
     except KeyboardInterrupt:
@@ -120,10 +129,13 @@ def chat(
     finally:
         console.print("\n[doctor.dim]A encerrar sessão...[/doctor.dim]")
         if not no_memory:
-            with console.status("[doctor.memory]A sintetizar sessão académica...[/doctor.memory]"):
-                summary = agent.end_session()
-            if summary:
-                console.print("[doctor.success]Sessão guardada na memória.[/doctor.success]")
+            try:
+                with console.status("[doctor.memory]A sintetizar sessão académica...[/doctor.memory]"):
+                    summary = agent.end_session()
+                if summary:
+                    console.print("[doctor.success]Sessão guardada na memória.[/doctor.success]")
+            except Exception as e:  # síntese é best-effort; nunca deve rebentar a saída
+                console.print(f"[doctor.dim]Sessão não sintetizada ({type(e).__name__}).[/doctor.dim]")
         console.print("[doctor.dim]Até à próxima.[/doctor.dim]")
 
 

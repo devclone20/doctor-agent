@@ -34,3 +34,9 @@ build/
 
 # PDFs temporários de pesquisa (manter só os indexados)
 knowledge_base/papers/tmp/
+*.key
+*.pem
+id_rsa
+secrets/
+*_state.json
+config.json

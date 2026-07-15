@@ -37,4 +37,5 @@ dev = [
 doctor = "doctor.cli.main:app"
 
 [tool.setuptools.packages.find]
+where = ["apps"]
 include = ["doctor*"]
