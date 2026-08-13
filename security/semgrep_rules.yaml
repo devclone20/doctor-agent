@@ -31,7 +31,7 @@ rules:
     severity: ERROR
     paths:
       include:
-        - "doctor/core/tools.py"
+        - "**/doctor/core/tools.py"
 
   # ---------------------------------------------------------------------------
   # RULE 2: Path Traversal — padrão genérico "../" em tool inputs
@@ -57,8 +57,8 @@ rules:
     severity: ERROR
     paths:
       include:
-        - "doctor/core/tools.py"
-        - "doctor/skills/"
+        - "**/doctor/core/tools.py"
+        - "**/doctor/skills/"
 
   # ---------------------------------------------------------------------------
   # RULE 3: XML Injection via python-docx
@@ -84,8 +84,8 @@ rules:
     severity: WARNING
     paths:
       include:
-        - "doctor/skills/"
-        - "doctor/core/"
+        - "**/doctor/skills/"
+        - "**/doctor/core/"
 
   - id: doctor-xml-injection-docx-run
     patterns:
@@ -98,8 +98,8 @@ rules:
     severity: WARNING
     paths:
       include:
-        - "doctor/skills/"
-        - "doctor/core/"
+        - "**/doctor/skills/"
+        - "**/doctor/core/"
 
   # ---------------------------------------------------------------------------
   # RULE 4: Template Injection — Jinja2 com autoescape desactivado
@@ -108,7 +108,9 @@ rules:
   # Referência: OWASP A03:2021 — Injection (SSTI)
   # ---------------------------------------------------------------------------
   - id: doctor-jinja2-autoescape-disabled
-    patterns:
+    # `patterns:` é AND — as 4 formas nunca podem coincidir no mesmo nó, por isso
+    # em AND a regra nunca dispararia. O que se quer é QUALQUER uma delas: OR.
+    pattern-either:
       - pattern: |
           jinja2.Environment(autoescape=False, ...)
       - pattern: |
@@ -162,7 +164,7 @@ rules:
     severity: WARNING
     paths:
       include:
-        - "doctor/core/tools.py"
+        - "**/doctor/core/tools.py"
 
   # ---------------------------------------------------------------------------
   # RULE 7: A03:2025 — Supply Chain — importações dinâmicas com strings não-literais
@@ -200,17 +202,27 @@ rules:
   # Referência: OWASP A10:2025 — Improper Exception and Error Handling
   # ---------------------------------------------------------------------------
   - id: doctor-except-without-logging
+    # Um `except` isolado não é uma unidade sintáctica que o parser de Python
+    # aceite — tem de vir com o `try` a que pertence. Sem isto a regra inteira
+    # rebenta com Pattern parse error e NENHUMA das 13 regras deste ficheiro
+    # chega a correr.
     patterns:
       - pattern: |
+          try:
+            ...
           except $EXC as $E:
             return $MSG
       - pattern-not: |
+          try:
+            ...
           except $EXC as $E:
             ...
             logging.$LEVEL(...)
             ...
             return $MSG
       - pattern-not: |
+          try:
+            ...
           except $EXC as $E:
             ...
             logger.$LEVEL(...)
@@ -225,9 +237,9 @@ rules:
     severity: WARNING
     paths:
       include:
-        - "doctor/core/tools.py"
-        - "doctor/skills/"
-        - "doctor/core/"
+        - "**/doctor/core/tools.py"
+        - "**/doctor/skills/"
+        - "**/doctor/core/"
 
   - id: doctor-bare-except
     patterns:
@@ -263,7 +275,7 @@ rules:
     severity: ERROR
     paths:
       include:
-        - "doctor/core/tools.py"
+        - "**/doctor/core/tools.py"
 
   # ---------------------------------------------------------------------------
   # RULE 6: subprocess com shell=True e input não filtrado
@@ -290,6 +302,6 @@ rules:
     severity: ERROR
     paths:
       include:
-        - "doctor/core/tools.py"
-        - "doctor/skills/"
+        - "**/doctor/core/tools.py"
+        - "**/doctor/skills/"
         - "scripts/"

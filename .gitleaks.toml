@@ -1,0 +1,22 @@
+# Configuração do gitleaks — doctor-agent.
+#
+# Estende as regras oficiais (não as substitui) e regista a única excepção
+# conhecida deste repositório.
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = """
+metadata/manifest.json é um manifesto de INTEGRIDADE, gerado: para cada ficheiro
+da wiki de conhecimento guarda o SHA-256 do conteúdo. São centenas de strings de
+64 hex — a forma exacta que a regra genérica `generic-api-key` procura, e nenhuma
+delas é uma credencial. É o único falso positivo do repo; sem esta entrada o scan
+falha em todos os commits e o alarme perde o valor.
+
+Âmbito deliberadamente estreito: só este ficheiro. Qualquer segredo real em
+qualquer outro caminho continua a fazer falhar o build.
+"""
+paths = [
+  '''metadata/manifest\.json''',
+]

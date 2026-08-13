@@ -3,9 +3,12 @@ Ferramentas do Doctor.
 10 tools: academic search, fetch paper, cite, write/read file, memory, web search.
 """
 
+import logging
 import os
 from pathlib import Path
 
+
+logger = logging.getLogger(__name__)
 TOOL_DEFINITIONS = [
     {
         "name": "search_academic",
@@ -410,6 +413,7 @@ def execute_tool(tool_name: str, tool_input: dict, db_path: Path) -> str:
         else:
             return f"Ferramenta desconhecida: {tool_name}"
     except Exception as e:
+        logger.warning("%s falhou: %s", "execute_tool", e)
         return f"Erro na ferramenta {tool_name}: {e}"
 
 
@@ -468,6 +472,7 @@ def _fetch_paper(inp: dict) -> str:
             return "\n".join(lines[:100])[:6000]
 
     except Exception as e:
+        logger.warning("%s falhou: %s", "_fetch_paper", e)
         return f"Erro ao buscar {url}: {e}"
 
 
@@ -507,19 +512,40 @@ def _lookup_doi(inp: dict) -> str:
     return "\n".join(lines)
 
 
+def _sandboxed_path(path_str: str) -> "Path | None":
+    """Resolve um caminho de tool input para DENTRO de ~/doctor-work, ou None.
+
+    O guarda único do sandbox de ficheiros do Doctor. Regras:
+    - caminhos relativos ancoram em ~/doctor-work;
+    - o caminho é resolvido (segue `..` e symlinks) ANTES da decisão;
+    - se o resultado final sair de ~/doctor-work — por `../`, por caminho
+      absoluto, ou por symlink — a resposta é None e o chamador recusa.
+    Sem isto, `../../.ssh/authorized_keys` (ou um absoluto directo) escrevia
+    fora do sandbox.
+    """
+    work_dir = Path(os.path.expanduser("~/doctor-work")).resolve()
+    work_dir.mkdir(parents=True, exist_ok=True)
+    p = Path(path_str)
+    candidate = p if p.is_absolute() else work_dir / p
+    try:
+        resolved = candidate.resolve()
+    except (OSError, RuntimeError):
+        return None
+    try:
+        resolved.relative_to(work_dir)
+    except ValueError:
+        return None
+    return resolved
+
+
 def _write_file(inp: dict) -> str:
-    path = Path(inp.get("path", "output.md"))
     content = inp.get("content", "")
     mode = inp.get("mode", "write")
 
-    # Segurança: apenas dentro do directório actual ou ~/doctor-work
-    work_dir = Path(os.path.expanduser("~/doctor-work"))
-    work_dir.mkdir(parents=True, exist_ok=True)
-
-    if not path.is_absolute():
-        full_path = work_dir / path
-    else:
-        full_path = path
+    # Segurança: apenas dentro de ~/doctor-work (guarda único, resolve-first)
+    full_path = _sandboxed_path(inp.get("path", "output.md"))
+    if full_path is None:
+        return "Caminho recusado: fora de ~/doctor-work. Usa um caminho relativo dentro da pasta de trabalho."
 
     full_path.parent.mkdir(parents=True, exist_ok=True)
 
@@ -531,14 +557,12 @@ def _write_file(inp: dict) -> str:
 
 
 def _read_file(inp: dict) -> str:
-    path = Path(inp.get("path", ""))
     max_chars = int(inp.get("max_chars", 8000))
 
-    work_dir = Path(os.path.expanduser("~/doctor-work"))
-    if not path.is_absolute():
-        full_path = work_dir / path
-    else:
-        full_path = path
+    # Mesmo guarda do _write_file: ler fora do sandbox exfiltra (~/.ssh, .env).
+    full_path = _sandboxed_path(inp.get("path", ""))
+    if full_path is None:
+        return "Caminho recusado: fora de ~/doctor-work. Usa um caminho relativo dentro da pasta de trabalho."
 
     if not full_path.exists():
         return f"Ficheiro não encontrado: {full_path}"
@@ -549,6 +573,7 @@ def _read_file(inp: dict) -> str:
             return content[:max_chars] + f"\n\n[... truncado. Total: {len(content)} chars ...]"
         return content
     except Exception as e:
+        logger.warning("%s falhou: %s", "_read_file", e)
         return f"Erro ao ler {full_path}: {e}"
 
 
@@ -556,10 +581,10 @@ def _list_files(inp: dict) -> str:
     path_str = inp.get("path", ".")
     pattern = inp.get("pattern", "*")
 
-    work_dir = Path(os.path.expanduser("~/doctor-work"))
-    path = Path(path_str)
-    if not path.is_absolute():
-        path = work_dir / path_str if path_str != "." else work_dir
+    # Mesmo guarda: listar fora do sandbox é reconhecimento do sistema.
+    path = _sandboxed_path("." if path_str == "." else path_str)
+    if path is None:
+        return "Caminho recusado: fora de ~/doctor-work. Usa um caminho relativo dentro da pasta de trabalho."
 
     if not path.exists():
         return f"Directório não encontrado: {path}"
@@ -609,7 +634,10 @@ def _save_learning(inp: dict, db_path: Path) -> str:
     title = inp.get("title", "")
     content = inp.get("content", "")
     tags = inp.get("tags", "learned")
-    slug = "learned_" + hashlib.md5(title.encode()).hexdigest()[:8]
+    # md5 aqui é só para encurtar o título num slug estável — não é segurança.
+    # usedforsecurity=False di-lo ao interpretador (e aos scanners) e mantém o
+    # código a correr em sistemas com FIPS activo, onde md5 "de segurança" falha.
+    slug = "learned_" + hashlib.md5(title.encode(), usedforsecurity=False).hexdigest()[:8]
     upsert_wiki_page(db_path, slug, title, content, tags=tags)
     return f"Conhecimento guardado: '{title}' (slug: {slug})"
 
@@ -660,6 +688,7 @@ def _search_web(inp: dict) -> str:
             lines.append("")
         return "\n".join(lines)
     except Exception as e:
+        logger.warning("%s falhou: %s", "_search_web", e)
         return f"Erro na pesquisa web: {e}"
 
 
@@ -679,6 +708,7 @@ def _manage_bibliography(inp: dict) -> str:
             bm.save()
             return f"Referência adicionada com chave BibTeX: {key}\nFicheiro actualizado: {bib_path}"
         except ValueError as exc:
+            logger.warning("%s falhou: %s", "_manage_bibliography", exc)
             return f"Erro: {exc}"
 
     elif action == "add_title":
@@ -690,6 +720,7 @@ def _manage_bibliography(inp: dict) -> str:
             bm.save()
             return f"Referência adicionada com chave BibTeX: {key}\nFicheiro actualizado: {bib_path}"
         except ValueError as exc:
+            logger.warning("%s falhou: %s", "_manage_bibliography", exc)
             return f"Erro: {exc}"
 
     elif action == "list":
@@ -725,6 +756,7 @@ def _sanitize_document(inp: dict) -> str:
             lines.append(f"  {key}: {val}")
         return "\n".join(lines)
     except Exception as e:
+        logger.warning("%s falhou: %s", "_sanitize_document", e)
         return f"Erro ao sanitizar documento: {e}"
 
 
@@ -738,31 +770,50 @@ def _verify_citations(inp: dict) -> str:
 
 
 def _run_command(inp: dict) -> str:
+    """Executa um comando da allowlist SEM shell.
+
+    O comando é dividido com shlex e entregue ao SO como argv. Sem shell não há
+    interpretação de `;`, `&&`, `|`, `$(...)` ou backticks: esses caracteres
+    chegam ao programa como texto literal. É isto que torna a allowlist real —
+    com `shell=True` bastava `lualatex tese.tex; <qualquer coisa>` para o prefixo
+    passar e o resto da cadeia correr à mesma.
+    """
     import subprocess
+    import shlex
     import re as _re
     command = inp.get("command", "")
     working_dir = inp.get("working_dir", os.path.expanduser("~/doctor-work"))
 
-    # Verificar comandos bloqueados — normalizar espacos para prevenir bypass
+    # Denylist mantida como defesa em profundidade (a allowlist do argv[0] é a
+    # barreira principal) — normalizar espacos para prevenir bypass
     command_lower = _re.sub(r'\s+', ' ', command.lower().strip())
     for blocked in BLOCKED_COMMANDS:
         if blocked in command_lower:
             return f"Comando bloqueado por segurança: '{blocked}'"
 
     # Apenas comandos permitidos para LaTeX e navegação
-    allowed_prefixes = (
+    allowed_commands = frozenset((
         "lualatex", "pdflatex", "xelatex", "biber", "bibtex",
         "ls", "cat", "head", "tail", "echo", "pwd", "find", "grep",
         "python", "python3", "pip", "pip3", "wc",
-    )
-    cmd_name = command.strip().split()[0] if command.strip() else ""
-    if not any(command.strip().startswith(p) for p in allowed_prefixes):
+    ))
+    try:
+        argv = shlex.split(command)
+    except ValueError as e:  # aspas por fechar, escape inválido
+        logger.warning("%s falhou: %s", "_run_command", e)
+        return f"Comando mal formado: {e}"
+    if not argv:
+        return "Comando vazio."
+
+    # A decisão é sobre o programa REAL a executar (argv[0]), não sobre o texto.
+    cmd_name = os.path.basename(argv[0])
+    if cmd_name not in allowed_commands:
         return f"Comando não permitido: '{cmd_name}'. Apenas LaTeX, ls, cat, python."
 
     try:
         result = subprocess.run(
-            command,
-            shell=True,
+            argv,
+            shell=False,
             capture_output=True,
             text=True,
             timeout=60,
@@ -770,7 +821,10 @@ def _run_command(inp: dict) -> str:
         )
         output = result.stdout[:2000] + (result.stderr[:500] if result.stderr else "")
         return output.strip() or "Comando executado sem output."
+    except FileNotFoundError:
+        return f"Comando não encontrado no sistema: '{cmd_name}'."
     except subprocess.TimeoutExpired:
         return "Timeout: comando demorou mais de 60 segundos."
     except Exception as e:
+        logger.warning("%s falhou: %s", "_run_command", e)
         return f"Erro ao executar: {e}"

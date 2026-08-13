@@ -310,7 +310,8 @@ def search_semantic_scholar(query: str, limit: int = 10) -> list[dict]:
         pdf_url = pdf_info.get("url", "") if isinstance(pdf_info, dict) else ""
 
         paper = {
-            "id": f"s2_{paper_id[:12]}" if paper_id else f"s2_{hashlib.md5(item.get('title', '').encode()).hexdigest()[:8]}",
+            # md5 = identificador local estável para um paper sem id — não é segurança.
+            "id": f"s2_{paper_id[:12]}" if paper_id else f"s2_{hashlib.md5(item.get('title', '').encode(), usedforsecurity=False).hexdigest()[:8]}",
             "title": item.get("title", ""),
             "authors": authors,
             "year": item.get("year"),

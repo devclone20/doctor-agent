@@ -1,5 +1,24 @@
 name: Security Audit
 
+# Auditoria de segurança do doctor-agent — reconstruída 2026-08-13.
+#
+# Leis de desenho (a versão anterior falhou em TODOS os runs durante 3 semanas):
+#
+# 1. O gate distingue gravidade. Bloquear em QUALQUER achado (era `--error`)
+#    transforma o vermelho em ruído de fundo e ninguém volta a olhar. Aqui:
+#    segredos e ERROR bloqueiam; WARNING fica registado no resumo do run.
+# 2. Nenhum job depende de artefactos de outro job por download implícito. O
+#    relatório consolidado é um job próprio com `needs:` — antes, o passo do
+#    Gitleaks tentava descarregar o artefacto do pip-audit e rebentava em
+#    cascata quando esse job falhava.
+# 3. Todas as actions fixadas por SHA de commit, não por tag móvel. Uma tag
+#    pode ser reapontada por quem controla a action; um SHA não. (Isto também
+#    silencia, de forma honesta, as 10 ocorrências de
+#    `github-actions-mutable-action-tag` que o próprio Semgrep reportava.)
+# 4. Versões de ferramentas fixadas e sujeitas à lei de quarentena de 14 dias
+#    do dono: semgrep 1.172.0 (28-07) e gitleaks-action v2 — nenhuma publicada
+#    nos últimos 14 dias.
+
 on:
   push:
     branches: [main]
@@ -8,177 +27,190 @@ on:
   schedule:
     # Segunda-feira 06:00 UTC — auditoria semanal de dependências
     - cron: '0 6 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: security-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   # ---------------------------------------------------------------------------
-  # Job 1: pip-audit — CVEs em dependências directas e transitivas
+  # CVEs nas dependências. NÃO bloqueia: um CVE transitivo sem correcção
+  # disponível não deve impedir merges — deve ser visível. Fica no resumo.
   # ---------------------------------------------------------------------------
-  dependency-audit:
-    name: pip-audit (dependências Python)
+  dependencies:
+    name: Dependências (pip-audit)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - name: Setup Python 3.11
-        uses: actions/setup-python@v5
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: '3.11'
 
-      - name: Instalar pip-audit
-        run: pip install pip-audit
-
-      - name: Auditar pyproject.toml
+      - name: Instalar o projecto e o pip-audit
         run: |
-          pip-audit \
-            --requirement <(pip install . --dry-run --quiet 2>&1 | grep -v "^WARNING" || true) \
-            --output=json \
-            --output-file pip-audit-report.json \
-            || pip-audit --output=columns
+          python -m pip install --upgrade pip
+          pip install -e .
+          pip install pip-audit
 
-      # Fallback: auditar directamente o ambiente instalado
-      - name: Auditar ambiente instalado (fallback)
-        if: failure()
+      - name: Auditar o ambiente resolvido
+        id: audit
+        # O ambiente instalado É a resolução real das dependências do
+        # pyproject.toml. A versão anterior passava a saída de texto de
+        # `pip install --dry-run` a `--requirement`, o que dava
+        # "argument project_path: not allowed with argument -r/--requirement"
+        # e falhava sempre.
         run: |
-          pip install -e ".[dev]" 2>/dev/null || pip install -e .
-          pip-audit --output=columns
+          set +e
+          pip-audit --desc --format json --output pip-audit-report.json
+          echo "code=$?" >> "$GITHUB_OUTPUT"
+          set -e
+          test -f pip-audit-report.json || echo '{"dependencies":[]}' > pip-audit-report.json
 
-      # --fix automático: apenas em branches != main para evitar actualizações
-      # não revistas a entrar directamente em produção.
-      # O step cria um requirements.fix.txt com as versões corrigidas sugeridas.
-      - name: pip-audit --fix (sugestoes — branches nao-main)
-        if: github.ref != 'refs/heads/main'
+      - name: Resumo legível
+        if: always()
         run: |
-          pip install -e ".[dev]" 2>/dev/null || pip install -e .
-          pip-audit --fix --dry-run --output=json > pip-audit-fix-suggestions.json 2>&1 || true
-          echo "--- Fix suggestions (dry-run) ---"
-          cat pip-audit-fix-suggestions.json 2>/dev/null || echo "Sem sugestoes de fix ou erro no dry-run."
+          python - <<'PY' >> "$GITHUB_STEP_SUMMARY"
+          import json, pathlib
+          data = json.loads(pathlib.Path("pip-audit-report.json").read_text() or "{}")
+          deps = data.get("dependencies", [])
+          vuln = [d for d in deps if d.get("vulns")]
+          print("## Dependências (pip-audit)\n")
+          if not vuln:
+              print(f"Sem vulnerabilidades conhecidas em {len(deps)} pacotes.")
+          else:
+              print(f"**{len(vuln)} pacote(s) com CVE** de {len(deps)} auditados.\n")
+              print("| Pacote | Versão | ID | Correcção |")
+              print("| --- | --- | --- | --- |")
+              for d in vuln:
+                  for v in d["vulns"]:
+                      fix = ", ".join(v.get("fix_versions") or []) or "—"
+                      print(f"| {d['name']} | {d['version']} | {v['id']} | {fix} |")
+          PY
 
-      - name: Upload relatório pip-audit
-        uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         if: always()
         with:
           name: pip-audit-report
-          path: |
-            pip-audit-report.json
-            pip-audit-fix-suggestions.json
+          path: pip-audit-report.json
           retention-days: 30
 
   # ---------------------------------------------------------------------------
-  # Job 2: Semgrep SAST — p/python + p/secrets + regras customizadas doctor
+  # SAST. Um único scan (a versão anterior corria os mesmos 3 rulesets três
+  # vezes). Bloqueia só em severidade ERROR.
   # ---------------------------------------------------------------------------
-  semgrep:
-    name: Semgrep SAST
+  sast:
+    name: SAST (Semgrep)
     runs-on: ubuntu-latest
-    container:
-      image: semgrep/semgrep:latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - name: Semgrep scan — rulesets standard
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: '3.11'
+
+      - name: Instalar o Semgrep (versão fixa)
+        run: pip install semgrep==1.172.0
+
+      - name: Validar as regras próprias
+        # Uma regra que não faz parse derruba o ficheiro INTEIRO em silêncio —
+        # foi o que aconteceu: 13 regras do doctor estiveram mortas sem aviso.
+        run: semgrep --validate --config security/semgrep_rules.yaml --metrics=off
+
+      - name: Scan
         run: |
           semgrep scan \
             --config p/python \
             --config p/secrets \
             --config p/owasp-top-ten \
-            --json \
-            --output semgrep-report.json \
-            . || true
+            --config security/semgrep_rules.yaml \
+            --metrics=off --json --output semgrep-report.json .
 
-      - name: Semgrep scan — regras customizadas doctor
+      - name: Resumo e gate por severidade
         run: |
-          if [ -f security/semgrep_rules.yaml ]; then
-            semgrep scan \
-              --config security/semgrep_rules.yaml \
-              --json \
-              --output semgrep-custom-report.json \
-              . || true
-          fi
+          python - <<'PY'
+          import json, os, pathlib, sys
+          res = json.loads(pathlib.Path("semgrep-report.json").read_text()).get("results", [])
+          err = [r for r in res if r["extra"]["severity"] == "ERROR"]
+          warn = [r for r in res if r["extra"]["severity"] == "WARNING"]
+          with open(os.environ["GITHUB_STEP_SUMMARY"], "a") as fh:
+              fh.write("## SAST (Semgrep)\n\n")
+              fh.write(f"{len(err)} erro(s) · {len(warn)} aviso(s) em {len(res)} achado(s).\n\n")
+              if res:
+                  fh.write("| Sev | Regra | Ficheiro:linha |\n| --- | --- | --- |\n")
+                  for r in err + warn:
+                      rule = r["check_id"].split(".")[-1]
+                      fh.write(f"| {r['extra']['severity']} | {rule} | {r['path']}:{r['start']['line']} |\n")
+          for r in err:
+              print(f"::error file={r['path']},line={r['start']['line']}::{r['check_id']} — {r['extra']['message'][:180]}")
+          for r in warn:
+              print(f"::warning file={r['path']},line={r['start']['line']}::{r['check_id']}")
+          sys.exit(1 if err else 0)
+          PY
 
-      - name: Semgrep scan — falhar em severity ERROR
-        run: |
-          semgrep scan \
-            --config p/python \
-            --config p/secrets \
-            --config p/owasp-top-ten \
-            --error \
-            .
-
-      - name: Upload relatórios Semgrep
-        uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         if: always()
         with:
-          name: semgrep-reports
-          path: |
-            semgrep-report.json
-            semgrep-custom-report.json
+          name: semgrep-report
+          path: semgrep-report.json
           retention-days: 30
 
   # ---------------------------------------------------------------------------
-  # Job 3: Gitleaks — secrets no histórico git e no diff do PR
+  # Segredos no histórico. Bloqueia sempre — um segredo commitado é incidente.
+  # As excepções conhecidas vivem em .gitleaks.toml, com justificação escrita.
   # ---------------------------------------------------------------------------
-  gitleaks:
-    name: Gitleaks (secrets scan)
+  secrets:
+    name: Segredos (Gitleaks)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout (histórico completo)
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          # fetch-depth: 0 para escanear histórico completo, não apenas o último commit
           fetch-depth: 0
 
-      - name: Instalar Gitleaks
-        run: |
-          curl -sSL https://github.com/gitleaks/gitleaks/releases/download/v8.18.4/gitleaks_8.18.4_linux_x64.tar.gz \
-            | tar -xz gitleaks
-          sudo mv gitleaks /usr/local/bin/gitleaks
+      - name: Gitleaks
+        uses: gitleaks/gitleaks-action@ff98106e4c7b2bc287b24eaf42907196329070c7 # v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_CONFIG: .gitleaks.toml
 
-      - name: Gitleaks — scan do histórico completo
-        run: |
-          gitleaks detect \
-            --source . \
-            --log-level warn \
-            --redact \
-            --report-format json \
-            --report-path gitleaks-report.json
+  # ---------------------------------------------------------------------------
+  # Relatório consolidado — job próprio, com os artefactos dos anteriores.
+  # `always()` para haver relatório mesmo quando um scan bloqueia.
+  # ---------------------------------------------------------------------------
+  report:
+    name: Relatório consolidado
+    runs-on: ubuntu-latest
+    needs: [dependencies, sast, secrets]
+    if: always()
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - name: Upload relatório Gitleaks
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: gitleaks-report
-          path: gitleaks-report.json
-          retention-days: 30
-
-      # Relatório consolidado: combina Gitleaks + pip-audit num único Markdown.
-      # Requer que o artefacto pip-audit-report.json esteja acessível no runner.
-      # O job download-artifact corre dentro do mesmo runner onde os ficheiros
-      # foram gerados pelos steps anteriores — pip-audit-report.json pode não
-      # existir neste job, por isso descarregamos o artefacto explicitamente.
-      - name: Download pip-audit report para relatório consolidado
-        uses: actions/download-artifact@v4
-        if: always()
-        with:
-          name: pip-audit-report
-          path: .
-        continue-on-error: true
-
-      - name: Setup Python para relatório consolidado
-        uses: actions/setup-python@v5
-        if: always()
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: '3.11'
 
-      - name: Gerar relatório de segurança consolidado
-        if: always()
-        run: |
-          python security/generate_security_report.py \
-            --gitleaks gitleaks-report.json \
-            --pip-audit pip-audit-report.json \
-            --output security-report.md
-          echo "--- Security Report Preview ---"
-          head -40 security-report.md
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          path: artifacts
+          merge-multiple: true
+        continue-on-error: true
 
-      - name: Upload relatório consolidado
-        uses: actions/upload-artifact@v4
+      - name: Gerar
+        run: |
+          test -f artifacts/pip-audit-report.json || echo '{"dependencies":[]}' > artifacts/pip-audit-report.json
+          echo '[]' > artifacts/gitleaks-report.json
+          python security/generate_security_report.py \
+            --gitleaks artifacts/gitleaks-report.json \
+            --pip-audit artifacts/pip-audit-report.json \
+            --output security-report.md
+          cat security-report.md >> "$GITHUB_STEP_SUMMARY"
+
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         if: always()
         with:
           name: security-report
