@@ -1,0 +1,80 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 470" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="14">
+  <defs>
+    <linearGradient id="accentline" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#6ea8ff" stop-opacity="0.9"/>
+      <stop offset="1" stop-color="#6ea8ff" stop-opacity="0.1"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1100" height="470" rx="14" fill="#0d1117"/>
+  <rect x="1.5" y="1.5" width="1097" height="467" rx="13" fill="none" stroke="#30363d" stroke-width="3"/>
+  <rect x="0" y="462" width="1100" height="4" fill="url(#accentline)" opacity="0.9"/>
+
+  <circle cx="28" cy="26" r="6" fill="#ff5f57"/>
+  <circle cx="50" cy="26" r="6" fill="#febc2e"/>
+  <circle cx="72" cy="26" r="6" fill="#28c840"/>
+
+  <g stroke="#6ea8ff" fill="none" stroke-width="1.6" stroke-linecap="round">
+    <rect x="101" y="15.5" width="20" height="17" rx="6"/>
+    <line x1="111" y1="15.5" x2="111" y2="11.5"/>
+  </g>
+  <circle cx="111" cy="10" r="1.6" fill="#6ea8ff"/>
+  <circle cx="106.8" cy="22" r="1.7" fill="#6ea8ff"/>
+  <circle cx="115.2" cy="22" r="1.7" fill="#6ea8ff"/>
+  <path d="M107 27 Q111 30 115 27" stroke="#6ea8ff" stroke-width="1.6" fill="none" stroke-linecap="round"/>
+
+  <text x="550" y="31" text-anchor="middle" font-size="13" fill="#8b949e">the writing order is a dependency graph, not a checklist</text>
+
+  <rect x="40" y="76" width="500" height="280" rx="10" fill="#161b22" stroke="#30363d"/>
+  <text x="56" y="102" font-size="13" font-weight="bold" fill="#6ea8ff">msc — 8 waves (core/section_dag.py)</text>
+
+  <text x="56" y="130" font-size="12" fill="#566070">wave 1</text>
+  <text x="140" y="130" font-size="12" fill="#c9d1d9">acknowledgements · introduction</text>
+  <text x="56" y="156" font-size="12" fill="#566070">wave 2</text>
+  <text x="140" y="156" font-size="12" fill="#c9d1d9">background · related_work</text>
+  <text x="56" y="182" font-size="12" fill="#566070">wave 3</text>
+  <text x="140" y="182" font-size="12" fill="#c9d1d9">methodology</text>
+  <text x="56" y="208" font-size="12" fill="#566070">wave 4</text>
+  <text x="140" y="208" font-size="12" fill="#c9d1d9">implementation</text>
+  <text x="56" y="234" font-size="12" fill="#566070">wave 5</text>
+  <text x="140" y="234" font-size="12" fill="#c9d1d9">evaluation</text>
+  <text x="56" y="260" font-size="12" fill="#566070">wave 6</text>
+  <text x="140" y="260" font-size="12" fill="#c9d1d9">discussion</text>
+  <text x="56" y="286" font-size="12" fill="#566070">wave 7</text>
+  <text x="140" y="286" font-size="12" fill="#c9d1d9">conclusion</text>
+  <text x="56" y="312" font-size="12" fill="#566070">wave 8</text>
+  <text x="140" y="312" font-size="12" fill="#c9d1d9">abstract</text>
+  <text x="56" y="340" font-size="11" fill="#8b949e">bsc, msc, phd and article each carry their own graph</text>
+
+  <rect x="560" y="76" width="500" height="280" rx="10" fill="#161b22" stroke="#30363d"/>
+  <text x="576" y="102" font-size="13" font-weight="bold" fill="#6ea8ff">token estimate per section</text>
+
+  <text x="576" y="134" font-size="11.5" fill="#c9d1d9">related_work</text>
+  <rect x="716" y="122" width="200" height="16" rx="4" fill="#6ea8ff"/>
+  <text x="1044" y="134" text-anchor="end" font-size="11" fill="#8b949e">12,000</text>
+
+  <text x="576" y="164" font-size="11.5" fill="#c9d1d9">background</text>
+  <rect x="716" y="152" width="167" height="16" rx="4" fill="#6ea8ff" fill-opacity="0.85"/>
+  <text x="1044" y="164" text-anchor="end" font-size="11" fill="#8b949e">10,000</text>
+
+  <text x="576" y="194" font-size="11.5" fill="#c9d1d9">methodology</text>
+  <rect x="716" y="182" width="167" height="16" rx="4" fill="#6ea8ff" fill-opacity="0.85"/>
+  <text x="1044" y="194" text-anchor="end" font-size="11" fill="#8b949e">10,000</text>
+
+  <text x="576" y="224" font-size="11.5" fill="#c9d1d9">introduction</text>
+  <rect x="716" y="212" width="133" height="16" rx="4" fill="#6fb7d9" fill-opacity="0.8"/>
+  <text x="1044" y="224" text-anchor="end" font-size="11" fill="#8b949e">8,000</text>
+
+  <text x="576" y="254" font-size="11.5" fill="#c9d1d9">conclusion</text>
+  <rect x="716" y="242" width="83" height="16" rx="4" fill="#6fb7d9" fill-opacity="0.7"/>
+  <text x="1044" y="254" text-anchor="end" font-size="11" fill="#8b949e">5,000</text>
+
+  <text x="576" y="284" font-size="11.5" fill="#c9d1d9">abstract</text>
+  <rect x="716" y="272" width="33" height="16" rx="4" fill="#8b949e" fill-opacity="0.8"/>
+  <text x="1044" y="284" text-anchor="end" font-size="11" fill="#8b949e">2,000</text>
+
+  <text x="576" y="318" font-size="11" fill="#8b949e">doctor plan sums these against --budget, default 100,000</text>
+  <text x="576" y="340" font-size="11" fill="#566070">core/budget.py warns at 80% and hard-stops at 100%</text>
+
+  <text x="550" y="410" text-anchor="middle" font-size="13" fill="#8b949e">a section unblocks only when the sections it depends on are done</text>
+</svg>

@@ -1,0 +1,90 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 580" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="14">
+  <defs>
+    <linearGradient id="accentline" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#6ea8ff" stop-opacity="0.9"/>
+      <stop offset="1" stop-color="#6ea8ff" stop-opacity="0.1"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1100" height="580" rx="14" fill="#0d1117"/>
+  <rect x="1.5" y="1.5" width="1097" height="577" rx="13" fill="none" stroke="#30363d" stroke-width="3"/>
+  <rect x="0" y="572" width="1100" height="4" fill="url(#accentline)" opacity="0.9"/>
+
+  <circle cx="28" cy="26" r="6" fill="#ff5f57"/>
+  <circle cx="50" cy="26" r="6" fill="#febc2e"/>
+  <circle cx="72" cy="26" r="6" fill="#28c840"/>
+
+  <g stroke="#6ea8ff" fill="none" stroke-width="1.6" stroke-linecap="round">
+    <rect x="101" y="15.5" width="20" height="17" rx="6"/>
+    <line x1="111" y1="15.5" x2="111" y2="11.5"/>
+  </g>
+  <circle cx="111" cy="10" r="1.6" fill="#6ea8ff"/>
+  <circle cx="106.8" cy="22" r="1.7" fill="#6ea8ff"/>
+  <circle cx="115.2" cy="22" r="1.7" fill="#6ea8ff"/>
+  <path d="M107 27 Q111 30 115 27" stroke="#6ea8ff" stroke-width="1.6" fill="none" stroke-linecap="round"/>
+
+  <text x="550" y="31" text-anchor="middle" font-size="13" fill="#8b949e">one command in, one memory write out</text>
+
+  <rect x="40" y="76" width="300" height="290" rx="10" fill="#161b22" stroke="#30363d"/>
+  <text x="56" y="102" font-size="13" font-weight="bold" fill="#6ea8ff">10 CLI commands</text>
+
+  <text x="56" y="128" font-size="11.5" fill="#c9d1d9">chat</text>
+  <text x="152" y="128" font-size="11" fill="#8b949e">interactive session</text>
+  <text x="56" y="152" font-size="11.5" fill="#c9d1d9">write</text>
+  <text x="152" y="152" font-size="11" fill="#8b949e">dissertation or section</text>
+  <text x="56" y="176" font-size="11.5" fill="#c9d1d9">template</text>
+  <text x="152" y="176" font-size="11" fill="#8b949e">IST-DEI skeleton</text>
+  <text x="56" y="200" font-size="11.5" fill="#c9d1d9">review</text>
+  <text x="152" y="200" font-size="11" fill="#8b949e">annotate a draft</text>
+  <text x="56" y="224" font-size="11.5" fill="#c9d1d9">cite</text>
+  <text x="152" y="224" font-size="11" fill="#8b949e">by query or by DOI</text>
+  <text x="56" y="248" font-size="11.5" fill="#c9d1d9">search</text>
+  <text x="152" y="248" font-size="11" fill="#8b949e">the five databases</text>
+  <text x="56" y="272" font-size="11.5" fill="#c9d1d9">ingest</text>
+  <text x="152" y="272" font-size="11" fill="#8b949e">index into SQLite</text>
+  <text x="56" y="296" font-size="11.5" fill="#c9d1d9">status</text>
+  <text x="152" y="296" font-size="11" fill="#8b949e">counters and sessions</text>
+  <text x="56" y="320" font-size="11.5" fill="#c9d1d9">memory</text>
+  <text x="152" y="320" font-size="11" fill="#8b949e">list, search, papers</text>
+  <text x="56" y="344" font-size="11.5" fill="#c9d1d9">plan</text>
+  <text x="152" y="344" font-size="11" fill="#8b949e">order, budget, waves</text>
+
+  <rect x="380" y="76" width="680" height="64" rx="10" fill="#161b22" stroke="#30363d"/>
+  <text x="400" y="102" font-size="12.5" font-weight="bold" fill="#6ea8ff">system prompt</text>
+  <text x="400" y="124" font-size="11" fill="#8b949e">persona + session memory + up to 3000 chars of wiki hits (FTS5)</text>
+
+  <path d="M720 140 L720 151" stroke="#566070" stroke-width="2.5"/>
+  <path d="M714 145 L720 151 L726 145" fill="none" stroke="#566070" stroke-width="2.5" stroke-linecap="round"/>
+
+  <rect x="380" y="152" width="680" height="64" rx="10" fill="#161b22" stroke="#30363d"/>
+  <text x="400" y="178" font-size="12.5" font-weight="bold" fill="#6ea8ff">model</text>
+  <text x="400" y="200" font-size="11" fill="#8b949e">claude-sonnet-4-6 by default; DOCTOR_MODEL or --model overrides</text>
+
+  <path d="M720 216 L720 227" stroke="#566070" stroke-width="2.5"/>
+  <path d="M714 221 L720 227 L726 221" fill="none" stroke="#566070" stroke-width="2.5" stroke-linecap="round"/>
+
+  <rect x="380" y="228" width="680" height="64" rx="10" fill="#161b22" stroke="#30363d"/>
+  <text x="400" y="254" font-size="12.5" font-weight="bold" fill="#6ea8ff">tool loop</text>
+  <text x="400" y="276" font-size="11" fill="#8b949e">14 tools, up to 15 iterations per turn, 8096 max tokens</text>
+
+  <path d="M720 292 L720 303" stroke="#566070" stroke-width="2.5"/>
+  <path d="M714 297 L720 303 L726 297" fill="none" stroke="#566070" stroke-width="2.5" stroke-linecap="round"/>
+
+  <rect x="380" y="304" width="680" height="64" rx="10" fill="#161b22" stroke="#30363d"/>
+  <text x="400" y="330" font-size="12.5" font-weight="bold" fill="#6ea8ff">session close</text>
+  <text x="400" y="352" font-size="11" fill="#8b949e">the turn log is synthesised and written back to the database</text>
+
+  <rect x="40" y="396" width="1020" height="96" rx="10" fill="#161b22" stroke="#30363d"/>
+  <text x="56" y="422" font-size="13" font-weight="bold" fill="#6ea8ff">memory — SQLite at ~/.doctor/doctor.db (WAL + FTS5)</text>
+
+  <text x="56" y="452" font-size="11.5" fill="#c9d1d9">sessions</text>
+  <text x="56" y="472" font-size="11" fill="#566070">id, project, doc_type</text>
+  <text x="310" y="452" font-size="11.5" fill="#c9d1d9">observations</text>
+  <text x="310" y="472" font-size="11" fill="#566070">user, assistant, tool</text>
+  <text x="564" y="452" font-size="11.5" fill="#c9d1d9">wiki_pages</text>
+  <text x="564" y="472" font-size="11" fill="#566070">107 pages indexed</text>
+  <text x="818" y="452" font-size="11.5" fill="#c9d1d9">papers</text>
+  <text x="818" y="472" font-size="11" fill="#566070">title, doi, bibtex</text>
+
+  <text x="550" y="520" text-anchor="middle" font-size="13" fill="#8b949e">every session ends by writing what it learned back to disk</text>
+</svg>

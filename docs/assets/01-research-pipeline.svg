@@ -1,0 +1,87 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 500" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="14">
+  <defs>
+    <linearGradient id="accentline" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#6ea8ff" stop-opacity="0.9"/>
+      <stop offset="1" stop-color="#6ea8ff" stop-opacity="0.1"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1100" height="500" rx="14" fill="#0d1117"/>
+  <rect x="1.5" y="1.5" width="1097" height="497" rx="13" fill="none" stroke="#30363d" stroke-width="3"/>
+  <rect x="0" y="492" width="1100" height="4" fill="url(#accentline)" opacity="0.9"/>
+
+  <circle cx="28" cy="26" r="6" fill="#ff5f57"/>
+  <circle cx="50" cy="26" r="6" fill="#febc2e"/>
+  <circle cx="72" cy="26" r="6" fill="#28c840"/>
+
+  <g stroke="#6ea8ff" fill="none" stroke-width="1.6" stroke-linecap="round">
+    <rect x="101" y="15.5" width="20" height="17" rx="6"/>
+    <line x1="111" y1="15.5" x2="111" y2="11.5"/>
+  </g>
+  <circle cx="111" cy="10" r="1.6" fill="#6ea8ff"/>
+  <circle cx="106.8" cy="22" r="1.7" fill="#6ea8ff"/>
+  <circle cx="115.2" cy="22" r="1.7" fill="#6ea8ff"/>
+  <path d="M107 27 Q111 30 115 27" stroke="#6ea8ff" stroke-width="1.6" fill="none" stroke-linecap="round"/>
+
+  <text x="550" y="31" text-anchor="middle" font-size="13" fill="#8b949e">how a query becomes a reference you can defend</text>
+
+  <rect x="40" y="82" width="240" height="100" rx="10" fill="#161b22" stroke="#30363d"/>
+  <text x="56" y="108" font-size="13" font-weight="bold" fill="#6ea8ff">1 · query</text>
+  <text x="56" y="132" font-size="11.5" fill="#c9d1d9">doctor search &lt;topic&gt;</text>
+  <text x="56" y="150" font-size="11.5" fill="#8b949e">or the search_academic</text>
+  <text x="56" y="168" font-size="11.5" fill="#8b949e">tool inside a chat turn</text>
+
+  <path d="M282 132 L296 132" stroke="#566070" stroke-width="2.5"/>
+  <path d="M291 126 L298 132 L291 138" fill="none" stroke="#566070" stroke-width="2.5" stroke-linecap="round"/>
+
+  <rect x="300" y="82" width="240" height="100" rx="10" fill="#161b22" stroke="#30363d"/>
+  <text x="316" y="108" font-size="13" font-weight="bold" fill="#6ea8ff">2 · sources</text>
+  <text x="316" y="132" font-size="11.5" fill="#c9d1d9">arXiv · Semantic Scholar</text>
+  <text x="316" y="150" font-size="11.5" fill="#c9d1d9">OpenAlex · PubMed</text>
+  <text x="316" y="168" font-size="11.5" fill="#c9d1d9">IST Scholar (ULisboa)</text>
+
+  <path d="M542 132 L556 132" stroke="#566070" stroke-width="2.5"/>
+  <path d="M551 126 L558 132 L551 138" fill="none" stroke="#566070" stroke-width="2.5" stroke-linecap="round"/>
+
+  <rect x="560" y="82" width="240" height="100" rx="10" fill="#161b22" stroke="#30363d"/>
+  <text x="576" y="108" font-size="13" font-weight="bold" fill="#6ea8ff">3 · merge</text>
+  <text x="576" y="132" font-size="11.5" fill="#8b949e">duplicates dropped by</text>
+  <text x="576" y="150" font-size="11.5" fill="#8b949e">lower-cased title, with</text>
+  <text x="576" y="168" font-size="11.5" fill="#8b949e">a 0.3 s pause per source</text>
+
+  <path d="M802 132 L816 132" stroke="#566070" stroke-width="2.5"/>
+  <path d="M811 126 L818 132 L811 138" fill="none" stroke="#566070" stroke-width="2.5" stroke-linecap="round"/>
+
+  <rect x="820" y="82" width="240" height="100" rx="10" fill="#161b22" stroke="#30363d"/>
+  <text x="836" y="108" font-size="13" font-weight="bold" fill="#6ea8ff">4 · format</text>
+  <text x="836" y="132" font-size="11.5" fill="#c9d1d9">IEEE, APA 7th and</text>
+  <text x="836" y="150" font-size="11.5" fill="#c9d1d9">BibTeX generated for</text>
+  <text x="836" y="168" font-size="11.5" fill="#8b949e">every paper record</text>
+
+  <rect x="40" y="222" width="200" height="132" rx="10" fill="#161b22" stroke="#30363d"/>
+  <text x="56" y="246" font-size="12" font-weight="bold" fill="#8b949e">input</text>
+  <text x="56" y="272" font-size="11" fill="#c9d1d9">title (required)</text>
+  <text x="56" y="292" font-size="11" fill="#8b949e">authors, year</text>
+  <text x="56" y="312" font-size="11" fill="#8b949e">optional fields</text>
+
+  <path d="M244 288 L272 288" stroke="#566070" stroke-width="2.5"/>
+  <path d="M267 282 L274 288 L267 294" fill="none" stroke="#566070" stroke-width="2.5" stroke-linecap="round"/>
+
+  <rect x="280" y="210" width="540" height="156" rx="10" fill="#161b22" stroke="#6ea8ff" stroke-opacity="0.45"/>
+  <text x="300" y="236" font-size="13" font-weight="bold" fill="#6ea8ff">5 · verify_citations — the gate</text>
+  <text x="300" y="266" font-size="12" fill="#c9d1d9">✓  CrossRef · OpenAlex · Semantic Scholar</text>
+  <text x="300" y="292" font-size="12" fill="#c9d1d9">✓  word-overlap score, stop words removed</text>
+  <text x="300" y="318" font-size="12" fill="#c9d1d9">✓  year within +/- 1, first author compared</text>
+  <text x="300" y="344" font-size="12" fill="#c9d1d9">✓  verified only at 0.7 confidence in 2 of 3</text>
+
+  <path d="M824 288 L852 288" stroke="#566070" stroke-width="2.5"/>
+  <path d="M847 282 L854 288 L847 294" fill="none" stroke="#566070" stroke-width="2.5" stroke-linecap="round"/>
+
+  <rect x="860" y="222" width="200" height="132" rx="10" fill="#161b22" stroke="#30363d"/>
+  <text x="876" y="246" font-size="12" font-weight="bold" fill="#8b949e">verdict</text>
+  <text x="876" y="272" font-size="11" fill="#c9d1d9">[OK] verified</text>
+  <text x="876" y="292" font-size="11" fill="#c9d1d9">[WARN] not found</text>
+  <text x="876" y="312" font-size="11" fill="#c9d1d9">[FAIL] discrepancy</text>
+
+  <text x="550" y="440" text-anchor="middle" font-size="13" fill="#8b949e">nothing enters a bibliography on the model's word alone</text>
+</svg>
